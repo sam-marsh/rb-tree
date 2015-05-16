@@ -104,7 +104,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean contains(E item) {
         reset();
-        boolean ret = locate(new Node(item), root) != null;
+        boolean ret = locate(new Node(item)) != null;
         append(String.format("contains(%s)", item));
         return ret;
     }
@@ -123,7 +123,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasPredecessor(E item) {
         reset();
-        boolean ret = locate(new Node(item), root) != null
+        boolean ret = locate(new Node(item)) != null
                 && !min.key.equals(item);
         append(String.format("hasPredecessor(%s)", item));
         return ret;
@@ -143,7 +143,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasSuccessor(E item) {
         reset();
-        boolean ret = locate(new Node(item), root) != null
+        boolean ret = locate(new Node(item)) != null
                 && !max.key.equals(item);
         append(String.format("hasSuccessor(%s)", item));
         return ret;
@@ -162,7 +162,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public E predecessor(E item) throws NoSuchElementException {
         reset();
-        Node pre = predecessor(locate(new Node(item), root));
+        Node pre = predecessor(locate(new Node(item)));
         if (pre == null)
             throw new NoSuchElementException("Argument does not have a " +
                 "predecessor");
@@ -194,7 +194,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public E successor(E item) throws NoSuchElementException {
         reset();
-        Node suc = successor(locate(new Node(item), root));
+        Node suc = successor(locate(new Node(item)));
         if (suc == null)
             throw new NoSuchElementException("Argument does not have a " +
                     "successor");
@@ -308,7 +308,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean delete(E item) {
         reset();
-        Node z = locate(new Node(item), root);
+        Node z = locate(new Node(item));
         if (z == null) return false;
         delete(z);
         append(String.format("delete(%s)", item));
@@ -367,7 +367,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public Iterator<E> iterator() {
         reset();
         append("iterator()");
-        return new TreeIterator(root);
+        return new TreeIterator(minimum(root));
     }
 
     /**
@@ -383,11 +383,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public Iterator<E> iterator(E start) {
         reset();
-        //TODO fix start node bug
-        //needs to start from first element greater than or
-        //equal to given element - element may not necessarily be in the
-        //dictionary
-        Iterator<E> ret = new TreeIterator(locate(new Node(start), root));
+        Iterator<E> ret = new TreeIterator(
+                locateMinNodeGreaterThan(new Node(start)));
         append(String.format("iterator(%s)", start));
         return ret;
     }
@@ -413,21 +410,53 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return logString;
     }
 
-    private Node locate(Node toFind, Node curr) {
+
+    private Node locate(Node toFind) {
         if (isEmpty(true)) return null;
-        int cmp = compare(toFind, curr);
-        if (cmp < 0) {
-            if (curr.left != nil) {
-                return locate(toFind, curr.left);
+        Node curr = root;
+        while (curr != null) {
+            int cmp = compare(toFind, curr);
+            if (cmp < 0) {
+                if (curr.left != nil) {
+                    curr = curr.left;
+                    continue;
+                }
+            } else if (cmp > 0) {
+                if (curr.right != nil) {
+                    curr = curr.right;
+                    continue;
+                }
+            } else if (toFind.key.equals(curr.key)) {
+                return curr;
             }
-        } else if (cmp > 0) {
-            if (curr.right != nil) {
-                return locate(toFind, curr.right);
-            }
-        } else if (toFind.key == curr.key) {
-            return curr;
+            curr = null;
         }
         return null;
+    }
+
+    private Node locateMinNodeGreaterThan(Node toFind) {
+        if (isEmpty(true)) return null;
+        Node curr = root;
+        Node smallest = max;
+        while (curr != null) {
+            int cmp = compare(toFind, curr);
+            if (cmp < 0) {
+                if (compare(curr, smallest) < 0) smallest = curr;
+                if (curr.left != nil) {
+                    curr = curr.left;
+                    continue;
+                }
+            } else if (cmp > 0) {
+                if (curr.right != nil) {
+                    curr = curr.right;
+                    continue;
+                }
+            } else if (toFind.key.equals(curr.key)) {
+                return curr;
+            }
+            curr = null;
+        }
+        return smallest;
     }
 
     private void fixTree(Node node) {
@@ -660,7 +689,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
         TreeIterator(Node start) {
             last = null;
-            next = minimum(start);
+            next = start;
         }
 
         @Override
