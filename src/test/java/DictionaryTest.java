@@ -93,7 +93,7 @@ public class DictionaryTest {
 
     @Test
     public void iteratesCorrectlyOverEntireDictionary() {
-        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        for (int i = 0; i < 1000; ++i) dictionary.add(i);
         int expected = 0;
         for (int i : dictionary) {
             assertThat(i, is(expected++));

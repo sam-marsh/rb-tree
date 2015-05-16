@@ -87,7 +87,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean contains(E item) {
         reset();
         boolean ret = locate(new Node(item), root) != null;
-        append("contains()");
+        append(String.format("contains(%s)", item));
         return ret;
     }
 
@@ -106,7 +106,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean hasPredecessor(E item) {
         reset();
         boolean ret = contains(item) && !min.key.equals(item);
-        append("hasPredecessor()");
+        append(String.format("hasPredecessor(%s)", item));
         return ret;
     }
 
@@ -125,7 +125,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean hasSuccessor(E item) {
         reset();
         boolean ret = contains(item) && !max.key.equals(item);
-        append("hasSuccessor()");
+        append(String.format("hasSuccessor(%s)", item));
         return ret;
     }
 
@@ -152,7 +152,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             x = y;
             y = y.parent;
         }
-        append("predecessor()");
+        append(String.format("predecessor(%s)", item));
         return y.key;
     }
 
@@ -173,7 +173,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     "successor");
         reset();
         Node y = successor(locate(new Node(item), root));
-        append("successor()");
+        append(String.format("successor(%s)", item));
         return y.key;
     }
 
@@ -229,7 +229,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         Node node = new Node(item);
         add(node);
-        append("add()");
+        append(String.format("add(%s)", item));
         return false;
     }
 
@@ -284,7 +284,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         Node z = locate(new Node(item), root);
         if (z == null) return false;
         delete(z);
-        append("delete()");
+        append(String.format("delete(%s)", item));
         return true;
     }
 
@@ -361,7 +361,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         //equal to given element - element may not necessarily be in the
         //dictionary
         Iterator<E> ret = new TreeIterator(locate(new Node(start), root));
-        append("iterator()");
+        append(String.format("iterator(%s)", start));
         return ret;
     }
 
