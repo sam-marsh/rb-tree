@@ -71,8 +71,26 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public boolean isEmpty() {
-        reset();
-        append("isEmpty()");
+        return isEmpty(false);
+    }
+
+    /**
+     * Internal method for checking if the dictionary is empty. See
+     * documentation of method {@link #isEmpty()}. This method is also called
+     * from other methods, in which case it should <i>not</i> be appended to
+     * the log string. In the case that the client calls the
+     * {@link #isEmpty()} method, it <i>should</i> be appended to the log
+     * string.
+     *
+     * @param quiet if this parameter is true, the call will not be appended
+     *              to the log string. If false, it will log the call.
+     * @return true iff the dictionary contains no elements.
+     */
+    private boolean isEmpty(boolean quiet) {
+        if (!quiet) {
+            reset();
+            append("isEmpty()");
+        }
         return root == nil;
     }
 
@@ -105,7 +123,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasPredecessor(E item) {
         reset();
-        boolean ret = contains(item) && !min.key.equals(item);
+        boolean ret = locate(new Node(item), root) != null
+                && !min.key.equals(item);
         append(String.format("hasPredecessor(%s)", item));
         return ret;
     }
@@ -124,7 +143,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasSuccessor(E item) {
         reset();
-        boolean ret = contains(item) && !max.key.equals(item);
+        boolean ret = locate(new Node(item), root) != null
+                && !max.key.equals(item);
         append(String.format("hasSuccessor(%s)", item));
         return ret;
     }
@@ -141,19 +161,24 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E predecessor(E item) throws NoSuchElementException {
-        if (!hasPredecessor(item))
-            throw new NoSuchElementException("Argument does not have a " +
-                    "predecessor");
         reset();
-        Node x = locate(new Node(item), root);
-        if (x.left != nil) return maximum(x.left).key;
-        Node y = x.parent;
-        while (y != nil && x == y.left) {
-            x = y;
-            y = y.parent;
-        }
+        Node pre = predecessor(locate(new Node(item), root));
+        if (pre == null)
+            throw new NoSuchElementException("Argument does not have a " +
+                "predecessor");
         append(String.format("predecessor(%s)", item));
-        return y.key;
+        return pre.key;
+    }
+
+    private Node predecessor(Node node) {
+        if (node == null || node == min) return null;
+        if (node.left != nil) return maximum(node.left);
+        Node parent = node.parent;
+        while (parent != nil && node == parent.left) {
+            node = parent;
+            parent = parent.parent;
+        }
+        return parent;
     }
 
     /**
@@ -168,24 +193,24 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E successor(E item) throws NoSuchElementException {
-        if (!hasSuccessor(item))
+        reset();
+        Node suc = successor(locate(new Node(item), root));
+        if (suc == null)
             throw new NoSuchElementException("Argument does not have a " +
                     "successor");
-        reset();
-        Node y = successor(locate(new Node(item), root));
         append(String.format("successor(%s)", item));
-        return y.key;
+        return suc.key;
     }
 
-    private Node successor(Node x) {
-        if (x == max) return null;
-        if (x.right != nil) return minimum(x.right);
-        Node y = x.parent;
-        while (y != nil && x == y.right) {
-            x = y;
-            y = y.parent;
+    private Node successor(Node node) {
+        if (node == null || node == max) return null;
+        if (node.right != nil) return minimum(node.right);
+        Node parent = node.parent;
+        while (parent != nil && node == parent.right) {
+            node = parent;
+            parent = parent.parent;
         }
-        return y;
+        return parent;
     }
 
     /**
@@ -196,7 +221,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E min() throws NoSuchElementException {
-        if (isEmpty()) throw new NoSuchElementException("Dictionary is empty");
+        if (isEmpty(true)) throw new NoSuchElementException("Dictionary is " +
+                "empty");
         reset();
         append("min()");
         return min.key;
@@ -210,7 +236,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E max() throws NoSuchElementException {
-        if (isEmpty()) throw new NoSuchElementException("Dictionary is empty");
+        if (isEmpty(true))
+            throw new NoSuchElementException("Dictionary is empty");
         reset();
         append("max()");
         return max.key;
@@ -235,7 +262,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
     private void add(Node node) {
         Node temp = root;
-        if (root == nil) {
+        if (isEmpty(true)) {
             root = node;
             node.color = Node.COLOUR_BLACK;
             node.parent = nil;
@@ -317,7 +344,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         }
         if (y_original_color == Node.COLOUR_BLACK)
             fixDelete(x);
-        if (isEmpty()) min = max = nil;
+        if (isEmpty(true)) min = max = nil;
         else if (z == min) min = minimum(root);
         else if (z == max) max = maximum(root);
     }
@@ -387,7 +414,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     private Node locate(Node toFind, Node curr) {
-        if (isEmpty()) return null;
+        if (isEmpty(true)) return null;
         int cmp = compare(toFind, curr);
         if (cmp < 0) {
             if (curr.left != nil) {
