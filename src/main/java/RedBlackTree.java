@@ -15,7 +15,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             "using %d comparison(s).%n";
 
     /**
-     *
+     * Empty 'null' node used to make code cleaner - more convenient than
+     * using null pointers as using this empty node means null checking isn't
+     * as frequently required.
      */
     private final Node nil;
 
@@ -683,6 +685,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             parent = nil;
         }
 
+        /**
+         * Returns a string representing the internal state of the subtree,
+         * with this node as root.
+         * @return a string representation of this node's subtree
+         */
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -690,52 +697,108 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             return sb.toString();
         }
 
-        private void toString(String prefix, StringBuilder sb,
-                              boolean isTail) {
-            sb.append(prefix).append(isTail ? "└── " : "├── ").append(key)
+        /**
+         * Internal recursive method for filling in the {@link
+         * StringBuilder}, as used in {@link #toString()}.
+         * @param prefix the character directly before this node
+         * @param sb the current string representation of the tree, appended
+         *           to by this method
+         * @param tail whether this node is the last sibling
+         */
+        private void toString(String prefix, StringBuilder sb, boolean tail) {
+            sb.append(prefix)
+                    .append(tail ? "└── " : "├── ")
+                    .append(key)
                     .append('\n');
             if (left != nil) {
-                left.toString(prefix + (isTail ? "    " : "│   "),
-                        sb, right == nil);
+                left.toString(
+                        prefix + (tail ? "    " : "│   "),
+                        sb,
+                        right == nil
+                );
             }
             if (right != nil) {
-                right.toString(prefix + (isTail ?"    " : "│   "), sb, true);
+                right.toString(
+                        prefix + (tail ? "    " : "│   "),
+                        sb,
+                        true
+                );
             }
         }
 
     }
 
     /**
-     *
+     * An in-order iterator over the elements of the dictionary.
      */
     private class TreeIterator implements Iterator<E> {
 
-
+        /**
+         * The node most recently returned from {@link #next()} - used in the
+         * {@link #remove()} method.
+         */
         private Node last;
+
+        /**
+         * The node that will be returned next.
+         */
         private Node next;
 
-        TreeIterator(Node start) {
+        /**
+         * Creates a new iterator starting at the given element.
+         * @param start the 'start' element. Will be returned by the
+         *              iterator first.
+         */
+        private TreeIterator(Node start) {
             last = null;
             next = start;
         }
 
+        /**
+         * Checks if the iterator has any more elements.
+         * @return true if and only if the iterator has more elements.
+         */
         @Override
         public boolean hasNext() {
             return next != null;
         }
 
+        /**
+         * Provides the next element in the dictionary, guaranteed to be
+         * >= than the previous element returned and <= than
+         * future elements returned. i.e. this method will return all
+         * elements from least to greatest in order.
+         *
+         * @return the next element in the dictionary
+         * @throws NoSuchElementException if all elements have already been
+         * returned, that is, if the iterator is 'used up'.
+         */
         @Override
-        public E next() {
-            if (!hasNext()) throw new NoSuchElementException();
+        public E next() throws NoSuchElementException {
+            if (!hasNext())
+                throw new NoSuchElementException("No further elements");
             last = next;
             next = successor(next);
             return last.key;
         }
 
+        /**
+         * Deletes the last item returned by {@link #next()} from the
+         * dictionary. {@link #next()} needs to have been called at least
+         * once on this iterator, and this method can only be called once per
+         * item returned from {@link #next()}.
+         *
+         * @throws IllegalStateException if the {@link #next()} method has not
+         * yet been called, or the remove method has already been called
+         * after the last call to the {@link #next()} method
+         */
         @Override
-        public void remove() {
-            if (last == null) throw new IllegalStateException();
+        public void remove() throws IllegalStateException {
+            if (last == null)
+                throw new IllegalStateException("");
             delete(last);
+            //set last to null so that if this method is called again without
+            //calling next first, an exception will be thrown
             last = null;
         }
 
