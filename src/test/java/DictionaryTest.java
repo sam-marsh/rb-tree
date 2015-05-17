@@ -1,7 +1,9 @@
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -48,6 +50,30 @@ public class DictionaryTest {
     public void containsItemAfterItemAdded() {
         dictionary.add(1);
         assertThat(dictionary.contains(1), is(true));
+    }
+
+    @Test
+    public void addReturnsTrueWhenItemNotInDictionary() {
+        for (int i = 0; i < 5; ++i)
+            assertThat(dictionary.add(i), is(true));
+    }
+    @Test
+    public void addReturnsFalseWhenItemAlreadyInDictionary() {
+        for (int i = 0; i < 5; ++i) dictionary.add(i);
+        assertThat(dictionary.add(3), is(false));
+    }
+
+    @Test
+    public void deleteReturnsTrueWhenItemInDictionary() {
+        for (int i = 0; i < 5; ++i) dictionary.add(i);
+        assertThat(dictionary.delete(3), is(true));
+    }
+
+    @Test
+    public void deleteReturnsFalseWhenItemNotInDictionary() {
+        for (int i = 0; i < 5; ++i) dictionary.add(i);
+        dictionary.delete(3);
+        assertThat(dictionary.delete(3), is(false));
     }
 
     @Test
@@ -129,4 +155,5 @@ public class DictionaryTest {
     public void printLog() throws IOException {
         System.out.println(dictionary.getLogString());
     }
+
 }

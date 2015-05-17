@@ -36,7 +36,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     /**
      * References to the current minimum and maximum element in the
      * dictionary. Undefined if the dictionary is empty. If the dictionary
-     * contains a single element, they will both point to that element.
+     * contains a single element, min and max will both point to that element.
      */
     private Node min, max;
 
@@ -255,12 +255,12 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean add(E item) {
         reset();
         Node node = new Node(item);
-        add(node);
+        boolean tmp = add(node);
         append(String.format("add(%s)", item));
-        return false;
+        return tmp;
     }
 
-    private void add(Node node) {
+    private boolean add(Node node) {
         Node temp = root;
         if (isEmpty(true)) {
             root = node;
@@ -278,7 +278,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     } else {
                         temp = temp.left;
                     }
-                } else if (cmp >= 0) {
+                } else if (cmp > 0) {
                     if (temp.right == nil) {
                         temp.right = node;
                         node.parent = temp;
@@ -286,6 +286,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     } else {
                         temp = temp.right;
                     }
+                } else if (cmp == 0) {
+                    return false;
                 }
             }
             fixTree(node);
@@ -295,6 +297,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             if (compare(node, min) < 0) min = node;
             else if (compare(node, max) > 0) max = node;
         }
+        return true;
     }
 
     /**
@@ -410,6 +413,10 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return logString;
     }
 
+    @Override
+    public String toString() {
+        return isEmpty(true) ? "└── \n" : root.toString();
+    }
 
     private Node locate(Node toFind) {
         if (isEmpty(true)) return null;
@@ -674,6 +681,26 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             left = nil;
             right = nil;
             parent = nil;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            toString("", sb, true);
+            return sb.toString();
+        }
+
+        private void toString(String prefix, StringBuilder sb,
+                              boolean isTail) {
+            sb.append(prefix).append(isTail ? "└── " : "├── ").append(key)
+                    .append('\n');
+            if (left != nil) {
+                left.toString(prefix + (isTail ? "    " : "│   "),
+                        sb, right == nil);
+            }
+            if (right != nil) {
+                right.toString(prefix + (isTail ?"    " : "│   "), sb, true);
+            }
         }
 
     }

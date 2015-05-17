@@ -2,4 +2,53 @@
 
 \subsection{Analytical}
 
+This section will detail the time complexity of each method.\\
+
+\begin{tabular}{| l | l |}
+	\hline
+	\textbf{Method} & \textbf{Time complexity} \\ \hline
+	\texttt{isEmpty()} & O(1) \\ \hline
+	\texttt{contains(Object)} & O(log n) \\ \hline
+	\texttt{hasPredecessor(Object)} & O(log n) \\ \hline
+	\texttt{hasSuccessor(Object)} & O(log n) \\ \hline
+	\texttt{predecessor(Object)} & O(log n) \\ \hline
+	\texttt{successor(Object)} & O(log n) \\ \hline
+	\texttt{min()} & O(1) \\ \hline
+	\texttt{max()} & O(1) \\ \hline
+	\texttt{add(Object)} & O(log n) \\ \hline
+	\texttt{delete(Object)} & O(log n) \\ \hline
+	\texttt{iterator()} & O(1) \\ \hline
+	\texttt{iterator(Object)} & O(log n) \\ \hline
+	\texttt{toString()} & O(n) \\
+	\hline
+\end{tabular}
+
+\texttt{}\\\\
+
+Red-black trees have four main properties:
+\begin{enumerate}
+\item A node is either black or red.
+\item Every leaf node is black.
+\item A red node has black children.
+\item Every path from a node to a leaf descendent contains the same number of black nodes.
+\end{enumerate}
+
+I prove that a red-black tree with n nodes has maximum height
+\begin{equation*}
+h = 2 \log_2(n + 1)
+\end{equation*}
+
+\begin{proof}
+    Any subtree with root $v$ has minimum number of internal nodes given by $2^{h_b (v)}$, where $h_b (v)$ is the number of black nodes in any path to a leaf descendent (red-black tree property 4). This can be shown simply by induction: \\
+    Base case: $h_b (v) = 0 \implies v \text{ is a leaf} \implies 2^0 - 1 = 0$ so it is correct for an zero-length black path. \\
+    Inductive step: Assume true for $h_b (v) < h_b(k)$. i.e. we assume it is true for all subtrees with black height less than $h_b(k)$. Then we consider node k: if black, then both subtrees have black height $h_b(k) - 1$. If k is red, then both subtrees have black height $h_b(k)$. So the number of internal nodes in any subtree is given by $n >= 2 $
+\end{proof}
+
+\subsubsection{\texttt{isEmpty()}}
+This method performs a single null-check of the root node and is independent of the number of elements in the tree. Thus \texttt{isEmpty()} runs in constant time.
+
+\subsubsection{\texttt{contains(Object)}}
+This method calls the helper method \texttt{locate(Node)} which is linear in the height of the tree. A proof follows: \\
+
+
 \subsection{Empirical}
