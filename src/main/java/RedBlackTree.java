@@ -91,7 +91,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     private boolean isEmpty(boolean quiet) {
         if (!quiet) {
             reset();
-            append("isEmpty()");
+            log("isEmpty()");
         }
         return root == nil;
     }
@@ -107,7 +107,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean contains(E item) {
         reset();
         boolean ret = locate(new Node(item)) != null;
-        append(String.format("contains(%s)", item));
+        log(String.format("contains(%s)", item));
         return ret;
     }
 
@@ -127,7 +127,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         boolean ret = locate(new Node(item)) != null
                 && !min.key.equals(item);
-        append(String.format("hasPredecessor(%s)", item));
+        log(String.format("hasPredecessor(%s)", item));
         return ret;
     }
 
@@ -147,7 +147,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         boolean ret = locate(new Node(item)) != null
                 && !max.key.equals(item);
-        append(String.format("hasSuccessor(%s)", item));
+        log(String.format("hasSuccessor(%s)", item));
         return ret;
     }
 
@@ -168,7 +168,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (pre == null)
             throw new NoSuchElementException("Argument does not have a " +
                 "predecessor");
-        append(String.format("predecessor(%s)", item));
+        log(String.format("predecessor(%s)", item));
         return pre.key;
     }
 
@@ -200,7 +200,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (suc == null)
             throw new NoSuchElementException("Argument does not have a " +
                     "successor");
-        append(String.format("successor(%s)", item));
+        log(String.format("successor(%s)", item));
         return suc.key;
     }
 
@@ -226,7 +226,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (isEmpty(true)) throw new NoSuchElementException("Dictionary is " +
                 "empty");
         reset();
-        append("min()");
+        log("min()");
         return min.key;
     }
 
@@ -241,7 +241,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (isEmpty(true))
             throw new NoSuchElementException("Dictionary is empty");
         reset();
-        append("max()");
+        log("max()");
         return max.key;
     }
 
@@ -258,7 +258,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         Node node = new Node(item);
         boolean tmp = add(node);
-        append(String.format("add(%s)", item));
+        log(String.format("add(%s)", item));
         return tmp;
     }
 
@@ -294,8 +294,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             }
             fixTree(node);
         }
-        if (min == nil || max == nil) min = max = node;
-        else {
+        if (min == nil || max == nil) {
+            min = max = node;
+        } else {
             if (compare(node, min) < 0) min = node;
             else if (compare(node, max) > 0) max = node;
         }
@@ -316,7 +317,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         Node z = locate(new Node(item));
         if (z == null) return false;
         delete(z);
-        append(String.format("delete(%s)", item));
+        log(String.format("delete(%s)", item));
         return true;
     }
 
@@ -371,7 +372,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public Iterator<E> iterator() {
         reset();
-        append("iterator()");
+        log("iterator()");
         return new TreeIterator(minimum(root));
     }
 
@@ -390,7 +391,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         Iterator<E> ret = new TreeIterator(
                 locateMinNodeGreaterThan(new Node(start)));
-        append(String.format("iterator(%s)", start));
+        log(String.format("iterator(%s)", start));
         return ret;
     }
 
@@ -415,6 +416,12 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return logString;
     }
 
+    /**
+     * Provides a string representation of the dictionary, in tree form.
+     *
+     * @return a string with the structure of the dictionary along with the
+     * associated values in the dictionary.
+     */
     @Override
     public String toString() {
         return isEmpty(true) ? "└── \n" : root.toString();
@@ -511,16 +518,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
     private void rotateLeft(Node node) {
         if (node.parent != nil) {
-            if (node == node.parent.left) {
-                node.parent.left = node.right;
-            } else {
-                node.parent.right = node.right;
-            }
+            if (node == node.parent.left) node.parent.left = node.right;
+            else node.parent.right = node.right;
             node.right.parent = node.parent;
             node.parent = node.right;
-            if (node.right.left != nil) {
-                node.right.left.parent = node;
-            }
+            if (node.right.left != nil) node.right.left.parent = node;
             node.right = node.right.left;
             node.parent.left = node;
         } else {
@@ -536,17 +538,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
     private void rotateRight(Node node) {
         if (node.parent != nil) {
-            if (node == node.parent.left) {
-                node.parent.left = node.left;
-            } else {
-                node.parent.right = node.left;
-            }
-
+            if (node == node.parent.left) node.parent.left = node.left;
+            else node.parent.right = node.left;
             node.left.parent = node.parent;
             node.parent = node.left;
-            if (node.left.right != nil) {
-                node.left.right.parent = node;
-            }
+            if (node.left.right != nil) node.left.right.parent = node;
             node.left = node.left.right;
             node.parent.right = node;
         } else {
@@ -626,15 +622,30 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         x.color = Node.COLOUR_BLACK;
     }
 
-    private void append(String method) {
+    /**
+     * Adds a new line to the log string describing the method that was just
+     * called and the number of comparisons made.
+     * @param method the method name.
+     */
+    private void log(String method) {
         log.append(String.format(LOG_MSG, method, comparisons));
     }
 
+    /**
+     * Finds the maximum node in a subtree.
+     * @param node the root node of this subtree
+     * @return the maximum node in the subtree
+     */
     private Node maximum(Node node) {
         while (node.right != nil) node = node.right;
         return node;
     }
 
+    /**
+     * Finds the minimum node in a subtree.
+     * @param node the root node of this subtree
+     * @return the minimum node in the subtree
+     */
     private Node minimum(Node node) {
         while (node.left != nil) node = node.left;
         return node;
