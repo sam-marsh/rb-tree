@@ -52,3 +52,23 @@ This method calls the helper method \texttt{locate(Node)} which is linear in the
 
 
 \subsection{Empirical}
+
+This section gives experimental data on the efficiency of the implementation.
+
+For demonstration of experimental correctness, please refer to the JUnit tests given in the \code{/test/java/DictionaryTest.java} file. JUnit 4.12 was used, and all tests passed at the time of project submission.
+
+Experimental data was obtained by repeatedly running a given method and averaging the result. Each run, the elements are randomly shuffled before being inserted into the dictionary to allow for various internal structures. The start and end times of the method were obtained through \code{java.lang.System.nanoTime()}. Data generation Java files can be found in the \code{/test/java/} folder. MATLAB R2014a was used for data visualisation.
+ 
+The empirical data was generated on a Macbook Pro (Late 2013), running OS X Yosemite 10.10.3 with a 2.8 GHz Intel Core i7 processor and 8 GB 1600 MHz DDR3 RAM.
+
+\subsubsection{Summary}
+On a dictionary containing 10,000,000 unique \code{java.lang.Integer} elements (averaged over 10,000 trials):
+
+\code{add(Integer)}: 1589 ns
+
+\code{delete(Integer)}: 4736 ns
+
+\code{contains(Integer)}: 4899 ns
+
+Therefore, even with 10,000,000 elements in the dictionary, the red-black tree can complete insertions, deletions and searches on the order of microseconds.
+\subsubsection{Growth}
