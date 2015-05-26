@@ -125,8 +125,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasPredecessor(E item) {
         reset();
-        boolean ret = locate(new Node(item)) != null
-                && !min.key.equals(item);
+        boolean ret = compare(new Node(item), min) > 0;
         log(String.format("hasPredecessor(%s)", item));
         return ret;
     }
@@ -145,8 +144,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasSuccessor(E item) {
         reset();
-        boolean ret = locate(new Node(item)) != null
-                && !max.key.equals(item);
+        boolean ret = compare(new Node(item), max) < 0; //TODO update doc
         log(String.format("hasSuccessor(%s)", item));
         return ret;
     }
