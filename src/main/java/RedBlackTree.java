@@ -15,7 +15,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             "using %d comparison(s).%n";
 
     /**
-     * Empty 'null' node used to make code cleaner - more convenient than
+     * Empty sentinel node used to make code cleaner - more convenient than
      * using null pointers as using this empty node means null checking isn't
      * as frequently required.
      */
@@ -62,6 +62,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         comparisons = 0;
     }
 
+    /**
+     * Resets the comparison counter. Used at the start of each public method
+     * defined in the {@link Dictionary} interface, so that the number of
+     * node comparisons can be kept track of (for the log string).
+     */
     private void reset() {
         comparisons = 0;
     }
@@ -113,11 +118,10 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
     /**
      * Checks if the given item has a predecessor in the dictionary, that is,
-     * if the item is in the dictionary and there exists a smaller element in
-     * the dictionary. Generally should be called before calling
-     * {@link #predecessor(Comparable)} in order to avoid a
-     * {@link NoSuchElementException} in the case that the item does not have
-     * a predecessor.
+     * if there exists a smaller element in the dictionary. Generally should
+     * be called before calling {@link #predecessor(Comparable)} in order to
+     * avoid a {@link NoSuchElementException} in the case that the item does
+     * not have a predecessor.
      *
      * @param item the item to be checked
      * @return true if and only if the item has a predecessor
@@ -126,18 +130,16 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean hasPredecessor(E item) {
         reset();
         boolean ret = !isEmpty(true) && compare(new Node(item), min) > 0;
-        //TODO update doc
         log(String.format("hasPredecessor(%s)", item));
         return ret;
     }
 
     /**
      * Checks if the given item has a successor in the dictionary, that is,
-     * if the item is in the dictionary and there exists a larger element in
-     * the dictionary. Generally should be called before calling
-     * {@link #successor(Comparable)} in order to avoid a
-     * {@link NoSuchElementException} in the case that the item does not have
-     * a successor.
+     * if there exists a larger element in the dictionary. Generally should
+     * be called before calling {@link #successor(Comparable)} in order to
+     * avoid a {@link NoSuchElementException} in the case that the item does
+     * not have a successor.
      *
      * @param item the item to be checked
      * @return true if and only if the item has a successor
@@ -146,7 +148,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean hasSuccessor(E item) {
         reset();
         boolean ret = !isEmpty(true) && compare(new Node(item), max) < 0;
-        //TODO update doc
         log(String.format("hasSuccessor(%s)", item));
         return ret;
     }
@@ -157,9 +158,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @param item the item to be checked
      * @return the item 'directly before' the specified item - i.e. the
      * greatest element less than the specified element
-     * @throws NoSuchElementException if the item is not in the dictionary or
-     *                                if it does not have a predecessor (i.e.
-     *                                if it is the minimum element)
+     * @throws NoSuchElementException if the item does not have a predecessor
+     * (i.e. if it is the minimum element)
      */
     @Override
     public E predecessor(E item) throws NoSuchElementException {
@@ -172,6 +172,13 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return pre.key;
     }
 
+    /**
+     * Finds the predecessor of a node.
+     *
+     * @param node the node to find the predecessor for
+     * @return null if the node doesn't have a predecessor, otherwise the
+     * greatest node less than the argument
+     */
     private Node predecessor(Node node) {
         if (node == null || node == min) return null;
         if (node.left != nil) return maximum(node.left);
@@ -203,6 +210,13 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return suc.key;
     }
 
+    /**
+     * Finds the successor of a node.
+     *
+     * @param node the node to find the successor for
+     * @return null if the node doesn't have a successor, otherwise the
+     * least node greater than the argument
+     */
     private Node successor(Node node) {
         if (node == null || node == max) return null;
         if (node.right != nil) return minimum(node.right);
@@ -299,8 +313,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     } else curr = curr.right;
                 } else if (cmp == 0) return false;
             }
-            //after insertion, we rebalance/restore red-black tree properties
-            fixTree(toInsert);
+            //after insertion, we re-balance/restore red-black tree properties
+            fixInsert(toInsert);
         }
         //the below code uses two more comparisons to check if the new node
         //is the new max/min of the tree, and updating if necessary.
@@ -338,22 +352,35 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @param toDelete the node to remove from the dictionary
      */
     private void delete(Node toDelete) {
-        Node x;
+        //the node that moves into curr's original position in the tree
+        Node move;
+        //the node either removed from the tree or moved within the tree
         Node curr = toDelete;
-        int yOriginalColor = curr.color;
+        //the original colour of the node to delete - we need to save this in
+        //order to check the colour at the end of the method - if it is black
+        //then we need to fix possible violations of the red-black tree
+        //properties.
+        int yOrigColour = curr.color;
+
+        //check the cases - dependent on how many children the node has
         if (toDelete.left == nil) {
-            x = toDelete.right;
+            //if the node to delete doesn't have a left child, just replace it
+            //by the right child
+            move = toDelete.right;
             transplant(toDelete, toDelete.right);
         } else if (toDelete.right == nil) {
-            x = toDelete.left;
+            //and vice versa for the left child
+            move = toDelete.left;
             transplant(toDelete, toDelete.left);
         } else {
+            //if it has two children, find the successor
             curr = minimum(toDelete.right);
-            yOriginalColor = curr.color;
-            x = curr.right;
-            if (curr.parent == toDelete)
-                x.parent = curr;
-            else {
+            //update the colour before any changes to the tree structure occur
+            yOrigColour = curr.color;
+            move = curr.right;
+            if (curr.parent == toDelete) {
+                move.parent = curr;
+            } else {
                 transplant(curr, curr.right);
                 curr.right = toDelete.right;
                 curr.right.parent = curr;
@@ -363,16 +390,32 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             curr.left.parent = curr;
             curr.color = toDelete.color;
         }
-        if (yOriginalColor == Node.COLOUR_BLACK)
-            fixDelete(x);
+
+        //if the node colour was black then we might have violated the
+        //properties of a red-black tree - so fix up the tree
+        if (yOrigColour == Node.COLOUR_BLACK)
+            fixDelete(move);
+
+        //finally, update the references to the min/max if necessary
         if (isEmpty(true)) min = max = nil;
         else if (toDelete == min) min = minimum(root);
         else if (toDelete == max) max = maximum(root);
     }
 
+    /**
+     * Gives the result of {@link Comparable#compareTo(Object)} when
+     * comparing the first node to the second, and also increments the number
+     * of comparisons used. This method is used instead of {@link
+     * Comparable#compareTo(Object)} to keep track of comparisons for the log
+     * string.
+     *
+     * @param n1 the first node
+     * @param n2 the node to compare the first node to
+     * @return the result of n1.compareTo(n2)
+     */
     private int compare(Node n1, Node n2) {
         ++comparisons;
-        return n1.key.compareTo(n2.key);
+        return n1.compareTo(n2);
     }
 
     /**
@@ -495,6 +538,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         while (curr != null) {
             int cmp = compare(toFind, curr);
             if (cmp < 0) {
+                //additional comparison - if we find a smaller valid element,
+                //update the reference
                 if (compare(curr, smallest) < 0) smallest = curr;
                 if (curr.left != nil) {
                     curr = curr.left;
@@ -518,7 +563,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * Used in the {@link #predecessor(Comparable)} method.
      *
      * @param toFind the node to find the predecessor for.
-     * @return the predecessor of the given node
+     * @return the predecessor of the given node.
      */
     private Node locateMaxNodeLessThan(Node toFind) {
         Node curr = root;
@@ -531,6 +576,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     continue;
                 }
             } else if (cmp > 0) {
+                //additional comparison - if we find a larger valid element,
+                //update the reference
                 if (compare(curr, largest) > 0) largest = curr;
                 if (curr.right != nil) {
                     curr = curr.right;
@@ -544,7 +591,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return largest;
     }
 
-    private void fixTree(Node node) {
+    private void fixInsert(Node node) {
         while (node.parent.color == Node.COLOUR_RED) {
             Node uncle;
             if (node.parent == node.parent.parent.left) {
@@ -737,7 +784,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * An internal class representing an internal red-black tree node. Each
      * node instance is coloured either red or black.
      */
-    private class Node {
+    private class Node implements Comparable<Node> {
 
         /**
          * The byte value representing the colour red.
@@ -793,6 +840,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         /**
          * Internal recursive method for filling in the {@link
          * StringBuilder}, as used in {@link #toString()}.
+         *
+         * Adapted from: http://stackoverflow.com/a/8948691/2251226
+         *
          * @param prefix the character directly before this node
          * @param sb the current string representation of the tree, appended
          *           to by this method
@@ -817,6 +867,17 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                         true
                 );
             }
+        }
+
+        /**
+         * Wraps the compareTo call of the key of this node for convenience.
+         *
+         * @param node the node to compare this node with
+         * @return the result of comparing the two node's keys
+         */
+        @Override
+        public int compareTo(Node node) {
+            return key.compareTo(node.key);
         }
 
     }
