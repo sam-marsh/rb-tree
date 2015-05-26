@@ -49,7 +49,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * each method implemented from  the dictionary interface, to set this
      * variable back to zero.
      */
-    private int comparisons;
+    public int comparisons;
 
     /**
      * Creates a new red-black tree, representing a dictionary, with no
@@ -373,7 +373,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public Iterator<E> iterator() {
         reset();
         log("iterator()");
-        return new TreeIterator(minimum(root));
+        return new TreeIterator(min);
     }
 
     /**
@@ -424,7 +424,10 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public String toString() {
-        return isEmpty(true) ? "└── \n" : root.toString();
+        reset();
+        String ret = isEmpty(true) ? "└── \n" : root.toString();
+        log("toString()");
+        return ret;
     }
 
     private Node locate(Node toFind) {
@@ -628,7 +631,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @param method the method name.
      */
     private void log(String method) {
-        log.append(String.format(LOG_MSG, method, comparisons));
+        //log.append(String.format(LOG_MSG, method, comparisons));
     }
 
     /**
