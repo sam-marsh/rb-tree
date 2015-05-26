@@ -65,7 +65,7 @@ public interface Dictionary<E extends Comparable<E>> extends Iterable<E> {
      * @return the element strictly greater than item in the Dictionary
      * @throws NoSuchElementException if there is no greater element.
      */
-    E successor(E item);
+    E successor(E item) throws NoSuchElementException;
 
     /**
      * Return the least item in the Dictionary
