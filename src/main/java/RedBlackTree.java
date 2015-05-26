@@ -125,7 +125,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasPredecessor(E item) {
         reset();
-        boolean ret = compare(new Node(item), min) > 0;
+        boolean ret = compare(new Node(item), min) > 0; //TODO update doc
         log(String.format("hasPredecessor(%s)", item));
         return ret;
     }
