@@ -2,8 +2,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Represents a
- *
+ * TODO document the class itself
  * @param <E>
  */
 public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
@@ -591,10 +590,21 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         return largest;
     }
 
+    /**
+     * After an insert, restores the properties of a red-black tree after any
+     * possible violations. After an insert, we may need to fix the following
+     * red-black tree properties:
+     * -the root must be black
+     * -a red node must have black children
+     *
+     * @param node the node we have just inserted into the tree
+     */
     private void fixInsert(Node node) {
+        //continue until the parent is black
         while (node.parent.color == Node.COLOUR_RED) {
             Node uncle;
             if (node.parent == node.parent.parent.left) {
+                //set the uncle to be the right child
                 uncle = node.parent.parent.right;
 
                 if (uncle != nil && uncle.color == Node.COLOUR_RED) {
@@ -612,7 +622,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                 node.parent.parent.color = Node.COLOUR_RED;
                 rotateRight(node.parent.parent);
             } else {
+                //set the uncle to be the left child
                 uncle = node.parent.parent.left;
+
                 if (uncle != nil && uncle.color == Node.COLOUR_RED) {
                     node.parent.color = Node.COLOUR_BLACK;
                     uncle.color = Node.COLOUR_BLACK;
@@ -632,9 +644,25 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         root.color = Node.COLOUR_BLACK;
     }
 
+    /**
+     * Left-rotates the subtree around a given node. Runs in constant time.
+     * Transforms the subtree in the following way:
+     *
+     *       |                     |
+     *       x                     y
+     *     /  \                   / \
+     *    a   y      ===>        x  c
+     *       / \                / \
+     *      b  c               a  b
+     *
+     * The rotation preserves the properties of the red-black tree.
+     *
+     * @param node the node to rotate about
+     */
     private void rotateLeft(Node node) {
         if (node.parent != nil) {
-            if (node == node.parent.left) node.parent.left = node.right;
+            if (node == node.parent.left)
+                node.parent.left = node.right;
             else node.parent.right = node.right;
             node.right.parent = node.parent;
             node.parent = node.right;
@@ -652,6 +680,21 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         }
     }
 
+    /**
+     * Right-rotates the subtree around a given node. Runs in constant time.
+     * Transforms the subtree in the following way:
+     *
+     *       |                 |
+     *       y                 x
+     *      / \     ===>      / \
+     *     x  c              a  y
+     *    / \                  / \
+     *   a  b                 b  c
+     *
+     * The rotation preserves the properties of the red-black tree.
+     *
+     * @param node the node to rotate about
+     */
     private void rotateRight(Node node) {
         if (node.parent != nil) {
             if (node == node.parent.left) node.parent.left = node.left;
@@ -692,7 +735,17 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         v.parent = u.parent;
     }
 
+    /**
+     * Restores the following properties to the red-black tree after deletion
+     * of a node:
+     * -every node is either red or black
+     * -the root is black
+     * -if a node is red then both of its children are black
+     *
+     * @param x the node that occupies the deleted node's original position
+     */
     private void fixDelete(Node x) {
+        //move up the TODO
         while (x != root && x.color == Node.COLOUR_BLACK) {
             if (x == x.parent.left) {
                 Node w = x.parent.right;
