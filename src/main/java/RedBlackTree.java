@@ -2,8 +2,18 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * TODO document the class itself
- * @param <E>
+ * A dictionary implementation using a type of balanced binary search tree
+ * called a red-black tree.
+ * The dictionary is sorted using the natural ordering of the elements.
+ * The implementation provides guaranteed logarithmic time for adding,
+ * deleting and searching.
+ * This implementation is primarily adapted from the book 'Introduction to
+ * Algorithms: Third Edition' by T. Cormen, C. E. Leiserson, R. L. Rivest and
+ * C. Stein.
+ *
+ * @author Samuel Marsh
+ *
+ * @param <E> the type of elements that the dictionary holds
  */
 public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
 
