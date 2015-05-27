@@ -11,8 +11,8 @@ This section will detail the time complexity of each method.\\
 	\textbf{Method} & \textbf{Time complexity} \\ \hline
 	\code{isEmpty()} & O(1) \\ \hline
 	\code{contains(Object)} & O(log n) \\ \hline
-	\code{hasPredecessor(Object)} & O(log n) \\ \hline
-	\code{hasSuccessor(Object)} & O(log n) \\ \hline
+	\code{hasPredecessor(Object)} & O(1) \\ \hline
+	\code{hasSuccessor(Object)} & O(1) \\ \hline
 	\code{predecessor(Object)} & O(log n) \\ \hline
 	\code{successor(Object)} & O(log n) \\ \hline
 	\code{min()} & O(1) \\ \hline
@@ -36,7 +36,7 @@ Red-black trees have five main properties:
 \item Every path from a node to a leaf descendent contains the same number of black nodes.
 \end{enumerate}
 
-First I prove that the following limit on the height of a red-black tree \parencite{clrs}:
+Since the height of the tree is referenced in demonstrating the time complexity of almost every method in the class, I first prove that the following limit on the height of a red-black tree \parencite{clrs}:
 \begin{equation*}
 h \leq 2\log_2(n+1)
 \end{equation*}
@@ -50,8 +50,33 @@ With the above combined with red-black tree properties, we can complete the proo
 This method performs a single null-check of the root node and is independent of the number of elements in the tree. Thus \code{isEmpty()} runs in constant time.
 
 \subsubsection{\code{contains(Object)}}
-This method calls the helper method \code{locate(Node)} which is linear in the height of the tree. A proof follows: \\
+This method calls the helper method \code{locate(Node)} which is linear in the height of the tree. \code{locate(Node)} performs a basic iterative binary tree search, moving down the tree and comparing the node with the argument, then moving to the left or right child depending on the result of \code{compareTo}. A binary tree search is linear in the height of the tree (O(h)) and since the height of a red-black tree is guaranteed to be logarithmic, the time complexity of this method is thus O(log n).
 
+
+\subsubsection{\code{hasPredecessor(Object)} and \code{hasSuccessor(Object)}}
+These methods make a single comparison with the current minimum/maximum of the dictionary, to ensure that there is a smaller/larger element in the dictionary. Since the extremum of the dictionary can be accessed in constant time, this comparison is independent of the size of the dictionary, so these methods are O(1).
+
+\subsubsection{\code{predecessor(Object)} and \code{successor(Object)}}
+These methods move down the tree, starting at the root, in essentially the same fashion as described in \code{contains(Object)}. However in addition, they also keep track of the greatest/least element found so far, which is not larger/smaller than the argument. Since there are at most 2 comparisons made per iteration (one to check whether we should move to the left or right subtree, and possibly one to update the current best successor/predecessor), and the method will iterate at most $h$ times, these methods will run in O(log n) time.
+
+\subsubsection{\code{min()} and \code{max()}}
+These two methods run in constant time as fields referencing the current minimum and maximum are kept updated upon insertions and deletions to the dictionary. So \code{min()} and \code{max()} simply access these fields, making them O(1).
+
+\subsubsection{\code{add(Object)}}
+
+\subsubsection{\code{delete(Object)}}
+
+\subsubsection{\code{iterator()}}
+Firstly: the constructor for the internal class \code{TreeIterator} runs in O(1) time, since it is passed the start node as an argument and stores this reference in a field in preparation for the first call to \code{next()}. Since for this method we start at the minimum element in the dictionary and iterate through to the maximum, and we can access the minimum element in constant time and simply pass it as a parameter to the \code{TreeIterator} constructor, the whole method takes O(1) time.
+
+\subsubsection{\code{iterator(Object)}}
+This method, although similar in functionality to \code{iterator()} does \textit{not} take constant time: it first needs to find the least node with key greater than the input argument. The method makes a call to the private method \code{locateMinNodeGreaterThan(Node)}, which is also used in \code{successor(Object)} and runs in logarithmic time - because it moves strictly down the tree, performing at most two comparisons each iteration. It iterates at most $h$ times, making this method O(log n).
+
+\subsubsection{\code{getLogString()}}
+\code{getLogString()} retrieves the string value of the \code{StringBuilder} log field and then resets the log. This is independent of the number of elements in the dictionary, therefore running in O(1) time.
+
+\subsubsection{\code{toString()}}
+This method was adapted from a \href{http://stackoverflow.com/}{StackOverflow} post \parencite{stackoverflow}. The interface method \code{toString()} calls the \code{toString()} method of the root node, which is a recursive method that prints out the node itself and the string representation of its two children. This method will therefore consider each node in the dictionary only once, making the method O(n).
 
 \subsection{Empirical}
 
@@ -97,8 +122,8 @@ For the other methods required by the \code{Dictionary} interface, the average n
 	\textbf{Method} & \textbf{Comparisons} \\ \hline
 	\code{isEmpty()} & 0.0 \\ \hline
 	\code{contains(Object)} & 12.6 \\ \hline
-	\code{hasPredecessor(Object)} & 12.6 \\ \hline
-	\code{hasSuccessor(Object)} & 12.9 \\ \hline
+	\code{hasPredecessor(Object)} & 1.0 \\ \hline
+	\code{hasSuccessor(Object)} & 1.0 \\ \hline
 	\code{predecessor(Object)} & 12.4 \\ \hline
 	\code{successor(Object)} & 12.6 \\ \hline
 	\code{min()} & 0.0 \\ \hline

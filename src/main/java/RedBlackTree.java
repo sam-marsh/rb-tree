@@ -559,7 +559,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     curr = curr.right;
                     continue;
                 }
-            } else if (toFind.key.equals(curr.key)) {
+            } else if (cmp == 0) {
                 return curr;
             }
             curr = null;
@@ -592,7 +592,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                     curr = curr.right;
                     continue;
                 }
-            } else if (toFind.key.equals(curr.key)) {
+            } else if (cmp == 0) {
                 return curr;
             }
             curr = null;
