@@ -62,7 +62,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * each method implemented from  the dictionary interface, to set this
      * variable back to zero.
      */
-    public int comparisons;
+    private int comparisons;
 
     /**
      * An integer to keep track of the total number of modifications on
