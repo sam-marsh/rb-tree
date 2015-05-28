@@ -36,7 +36,7 @@ Red-black trees have five main properties:
 \item Every path from a node to a leaf descendent contains the same number of black nodes.
 \end{enumerate}
 
-Since the height of the tree is referenced in demonstrating the worst-case time complexity of almost every method in the class, I first prove the following limit on the height of a red-black tree \parencite{clrs}:
+Since the height of the tree is referenced in demonstrating the worst-case time complexity of almost every method in the class, I first prove the following limit on the height of a red-black tree \cite{clrs}:
 \begin{equation*}
 h \leq 2\log_2(n+1)
 \end{equation*}
@@ -64,8 +64,15 @@ Once it reaches some point in the tree - (where the right/left child is \code{ni
 These two methods run in constant time as fields referencing the current minimum and maximum are kept updated upon insertions and deletions to the dictionary. So \code{min()} and \code{max()} simply access these fields, making them O(1).
 
 \subsubsection{\code{add(Object)}}
+\code{add(Object)} first creates a new \code{Node} and calls the \code{insert(Node)} helper method, which is analogous to \code{RB-INSERT(T, z)} in CLRS. A summary of the non-trivial parts of the method follows:
+first, the place to insert the new node in the tree is located - this takes at O(h) time since it moves strictly down the tree each iteration, and does constant time work inside the loop. After this is done, the node is made red and then the tree properties are restored using \code{fixInsert(Node)}. \code{fixInsert(Node)} is analogous to \code{RB-INSERT-FIXUP(T, z)} in CLRS. The while loop in \code{fixInsert(Node)} only repeats if the node's uncle is red, and if this occurs we move two levels up (or possibly terminate the loop). Everything inside the while loop takes constant time (in particular note that \code{rotateLeft(Node)} and \code{rotateRight(Node)} do constant work - they have O(1) time complexity). Therefore \code{fixInsert(Node)} is O(h) $\implies$ the whole insertion procedure takes O(log n) time.
+
+Note that if an item is successfully inserted into the dictionary, it is then compared with the minimum and maximum fields to check if we need to update them. This is a constant time procedure and doesn't affect the time complexity of \code{add(Object)}. 
 
 \subsubsection{\code{delete(Object)}}
+\code{delete(Object)} was also implemented using CLRS as a foundation. Firstly note that the \code{transplant(Node)} method runs in constant time since it simply replaces one subtree as a child of its parent with another subtree by modifying references, and is independent of the size of the tree. With this, we can see that the internal method \code{delete(Node)}, at worst, takes O(log n) time when it has to find the minimum node of the right child's subtree. Then at the end of the method \code{fixDelete(Node)} is called, which also takes O(log n) time: the while loop in the method only repeats when node's sibling is black and both of the sibling's children are black - in which case each iteration we move up the tree by assigning \code{node = node.parent}. This can only happen at most O(h) times, so the overall complexity of \code{delete(Object)} is O(log n).
+
+NB: if the element that was deleted was the minimum or maximum element in the dictionary, then \code{minimum(Node)}/\code{maximum(Node)} will be called with the root as the argument, in order to update minimum/maximum reference. This does not affect the time complexity, as O(2 log n) = O(log n).
 
 \subsubsection{\code{iterator()}}
 Firstly: the constructor for the internal class \code{TreeIterator} runs in O(1) time, since it is passed the start node as an argument and stores this reference in a field in preparation for the first call to \code{next()}. Since for this method we start at the minimum element in the dictionary and iterate through to the maximum, and we can access the minimum element in constant time and simply pass it as a parameter to the \code{TreeIterator} constructor, the whole method takes O(1) time.
@@ -73,15 +80,17 @@ Firstly: the constructor for the internal class \code{TreeIterator} runs in O(1)
 \subsubsection{\code{iterator(Object)}}
 This method, although similar in functionality to \code{iterator()} does \textit{not} take constant time: it first needs to find the least node with key greater than the input argument. The method makes a call to the private method \code{ceiling(Node)}. The method \code{ceiling(Node)} is very similar in functionality to \code{above(Node)}, which is used in \code{successor(Object)}.
 
+In addition to the time complexity analysis of returning a new iterator, I will also briefly detail the time complexity of the methods in the \code{TreeIterator} class: clearly \code{hasNext()} takes O(1) since it simply performs a `nil-check'; \code{remove()} takes O(log n) since it calls \code{delete(Node)}, which is shown to be O(log n) above; \code{next()} also takes O(log n) since it calls the \code{successor(Node)} method, and as above \code{successor(Node)} runs in O(log n). Therefore iterating through the dictionary takes time O(n log n).
+
 \subsubsection{\code{getLogString()}}
 \code{getLogString()} retrieves the string value of the \code{StringBuilder} log field and then resets the log. This is independent of the number of elements in the dictionary, therefore running in O(1) time.
 
 \subsubsection{\code{toString()}}
-This method was adapted from a \href{http://stackoverflow.com/}{StackOverflow} post \parencite{stackoverflow}. The interface method \code{toString()} calls the \code{toString()} method of the root node, which is a recursive method that prints out the node itself and the string representation of its two children. This method will therefore consider each node in the dictionary only once, making the method O(n).
+This method was adapted from a \href{http://stackoverflow.com/}{StackOverflow} post \cite{stackoverflow}. The interface method \code{toString()} calls the \code{toString()} method of the root node, which is a recursive method that prints out the node itself and the string representation of its two children. This method will therefore consider each node in the dictionary only once, making the method O(n).
 
 \subsection{Empirical}
 
-This section gives experimental data on the efficiency of the implementation.
+This section gives experimental data on the efficiency of the implementation. The efficiency is quantified as the number of comparisons made when performing an operation in the \code{Dictionary} interface.
 
 For demonstration of experimental correctness, refer to the JUnit tests which can be found in the \code{/test/java/DictionaryTest.java} file. JUnit 4.12 was used, and all tests passed at the time of project submission.
 
@@ -93,6 +102,8 @@ For \code{add}, \code{delete} and \code{contains}, plot data was averaged over 1
 Plots of the growth of the number of comparisons for adding, deleting and searching are below. Both linear-linear and log-linear graphs are provided to demonstrate the logarithmic growth of the functions.
 
 For the other methods required by the \code{Dictionary} interface, the average number of comparisons made on a 10,000-element dictionary is given in the table below. These results were averaged over 100 trials.
+
+For all tests, a new dictionary was created each time and the 10,000 elements were inserted in random order. This allows for a range of different possible tree structures to even out any possible biases in any individual trial.
 
 \begin{figure}[!htbpp]
     \centering
@@ -121,7 +132,7 @@ For the other methods required by the \code{Dictionary} interface, the average n
 \begin{tabular}{| l | l | l |}
 	\hline
 	\textbf{Method} & \multicolumn{2}{c |}{\textbf{Comparisons}} \\ \hline
-	& \textbf{In dictionary} & \textbf{Not in dictionary} \\ \hline
+	& \textbf{Item in dictionary} & \textbf{Item not in dictionary} \\ \hline
 	\code{isEmpty()} & \multicolumn{2}{l |}{0.0}  \\ \hline
 	\code{contains(Object)} & 12.6 & 13.3 \\ \hline
 	\code{hasPredecessor(Object)} & \multicolumn{2}{l |}{1.0} \\ \hline
