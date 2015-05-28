@@ -6,8 +6,9 @@ This section will detail the time complexity of each method.\\
 
 \begin{table}[!htbp]
 \centering
-\begin{tabular}{| l | l |}
+\begin{tabular}[t]{| l | l |}
 	\hline
+	\multicolumn{2}{| c |}{\code{RedBlackTree}} \\ \hline
 	\textbf{Method} & \textbf{Time complexity} \\ \hline
 	\code{isEmpty()} & O(1) \\ \hline
 	\code{contains(Object)} & O(log n) \\ \hline
@@ -21,8 +22,15 @@ This section will detail the time complexity of each method.\\
 	\code{delete(Object)} & O(log n) \\ \hline
 	\code{iterator()} & O(1) \\ \hline
 	\code{iterator(Object)} & O(log n) \\ \hline
-	\code{toString()} & O(n) \\
+	\code{toString()} & O(n) \\ \hline
+\end{tabular}
+\begin{tabular}[t]{| l | l |}
 	\hline
+	\multicolumn{2}{| c |}{\code{TreeIterator}} \\ \hline
+	\textbf{Method} & \textbf{Time complexity} \\ \hline
+	\code{hasNext()} & O(1) \\ \hline
+	\code{next()} & O(log n) \\ \hline
+	\code{remove()} & O(log n) \\ \hline
 \end{tabular}
 \caption{Summary of time complexity of each method.}
 \end{table}
@@ -47,7 +55,7 @@ With the above combined with red-black tree properties, we can complete the proo
 \end{proof}
 
 \subsubsection{\code{isEmpty()}}
-This method performs a single null-check of the root node and is independent of the number of elements in the tree. Thus \code{isEmpty()} runs in constant time.
+This method performs a single null-check of the root node and is independent of the number of elements in the tree. Thus \code{isEmpty()} runs in constant time O(1).
 
 \subsubsection{\code{contains(Object)}}
 This method calls the helper method \code{locate(Node)} which is linear in the height of the tree. \code{locate(Node)} performs a basic iterative binary tree search, moving down the tree and comparing the node with the argument, then moving to the left or right child depending on the result of \code{compareTo}. A binary tree search is linear in the height of the tree (O(h)) and since the height of a red-black tree is guaranteed to be logarithmic, the time complexity of this method is thus O(log n).
@@ -90,7 +98,7 @@ This method was adapted from a \href{http://stackoverflow.com/}{StackOverflow} p
 
 \subsection{Empirical}
 
-This section gives experimental data on the efficiency of the implementation. The efficiency is quantified as the number of comparisons made when performing an operation in the \code{Dictionary} interface.
+This section gives experimental data on the efficiency of the implementation. The efficiency is quantified by the number of comparisons made when performing an operation in the \code{Dictionary} interface.
 
 For demonstration of experimental correctness, refer to the JUnit tests which can be found in the \code{/test/java/DictionaryTest.java} file. JUnit 4.12 was used, and all tests passed at the time of project submission.
 

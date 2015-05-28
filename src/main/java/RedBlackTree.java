@@ -164,8 +164,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public E predecessor(E item) throws NoSuchElementException {
         if (!hasPredecessor(item))
-            throw new NoSuchElementException("Argument does not have a " +
-                    "predecessor");
+            throw new NoSuchElementException(
+                    "argument does not have a predecessor"
+            );
         reset();
         Node pre = below(new Node(item));
         log(String.format("predecessor(%s)", item));
@@ -184,8 +185,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public E successor(E item) throws NoSuchElementException {
         if (!hasSuccessor(item))
-            throw new NoSuchElementException("Argument does not have a " +
-                    "successor");
+            throw new NoSuchElementException(
+                    "argument does not have a successor"
+            );
         reset();
         Node suc = above(new Node(item));
         log(String.format("successor(%s)", item));

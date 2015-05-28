@@ -37,18 +37,23 @@ The majority of my implementation is adapted from the pseudocode in the book `In
 I considered various options for the \code{contains()} method. My final implementation runs in logarithmic time by using the typical binary search tree search (traversing down the tree). However, I also considered the option of having a separate internal data structure such as a hash table. A hash table would provide \textit{much} faster lookups on average, but unfortunately still has a O(n) worst case. The project specifications require O(log n) worst case, and storing the data in a hash table as well would also essentially double the space requirement. In the end, I decided a basic tree search would suffice for this method.
  
 \subsubsection{Successors/predecessors}
-This part of the dictionary took several refactorings and was the most challenging part of the project to implement. At first I developed the methods to first locate the node with the given value, and then find the successor of that node using well-known binary search tree methods. Therefore initially, \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} would take logarithmic time, as they would first check whether the element was contained in the dictionary (O(log n)) and then check whether it was within the bounds of the dictionary (not $\leq$ min or $\geq$ max respectively). However after implementation I realised that it was not required that the argument be contained in the dictionary. Therefore \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} could be reduced to constant time - since the argument only has to be less than the maximum element to have a successor, and vice versa for predecessor. My final design for \code{successor(Object)} uses a method \code{above(Node)}, which finds the least node strictly greater than the argument (and \code{below(Node)} is symmetric for \code{predecessor(Object)}.
+This part of the dictionary took several refactorings and was the most challenging part of the project to implement. At first I developed the methods to first locate the node with the given value, and then find the successor of that node using well-known binary search tree methods. Therefore initially, \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} would take logarithmic time, as they would first check whether the element was contained in the dictionary (O(log n)) and then check whether it was within the bounds of the dictionary (not $\leq$ min or $\geq$ max respectively). However after implementation I realised that it was not required that the argument be contained in the dictionary. Therefore \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} could be reduced to constant time - since the argument only has to be less than the maximum element to have a successor, and vice versa for predecessor. My final design for \code{successor(Object)} uses a method \code{above(Node)}, which finds the least node strictly greater than the argument (and \code{below(Node)} is symmetric for \code{predecessor(Object)}).
 
 \subsubsection{Minimum/maximum}
 Originally I implemented \code{max()} and \code{min()} to simply call the helper methods \code{minimum(Node)} and \code{maximum(Node)} with the root as the argument. This takes logarithmic time. However, I later modified the class to maintain two extra fields \code{min} and \code{max}. Upon insertion, the current values of \code{min} and \code{max} are compared with the newly inserted element - if the new node is greater than the max or less than the min, the references are updated. This adds a worst-case cost of 2  extra comparisons to the \code{add(Object)} method and reduces \code{min()} and \code{max()} to O(1).
 
 Upon deletion, if the item being deleted is the minimum or the maximum, then the min/max is found by searching the tree again from the root. This is a minor cost when compared to the performance gains from constant time access to the extremum of the dictionary (and doesn't make the time complexity of \code{delete(Object)} any worse).
 
-\subsubsection{Insertion} 
-The \code{add(Object)} and \code{delete(Object)} methods (\code{delete(Object)} described below) are where my implementation has similarities to the red-black tree detailed in CLRS. 
+\subsubsection{Insertion/Deletion} 
+The \code{add(Object)} and \code{delete(Object)} methods are where my implementation has strong similarities to the red-black tree detailed in CLRS.
 
-
-\subsubsection{Deletion}
+\begin{figure}
+\centering
+\raisebox{-.5\height}{\includegraphics[width=0.25\textwidth]{resources/before}}
+$\implies$
+\raisebox{-.5\height}{\includegraphics[width=0.25\textwidth]{resources/after}}
+\caption{Inserting characters \textit{a} to \textit{m} into the red-black tree, and then deleting the root \textit{d}. Note that in both cases, the height $h = 5$ and for a dictionary with 12-13 nodes the height bound is $h \leq 2\log_2(13+1) \approx 7$ which is satisfied by both structures.}
+\end{figure}
 
 \subsubsection{Iteration}
 
