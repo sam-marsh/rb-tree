@@ -24,8 +24,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     /**
      * The constant log message format, used in {@link #getLogString()}
      */
-    private static final String LOG_MSG = "Operation %s completed " +
-            "using %d comparison(s).%n";
+    private static final String LOG_MSG =
+            "Operation %s completed using %d comparison(s).%n";
 
     /**
      * Empty sentinel node used to make code cleaner - more convenient than
@@ -597,6 +597,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                 if (curr.left != nil) {
                     curr = curr.left;
                 } else {
+                    //the argument is smaller than this node and there's no
+                    //smaller element on the left, so this must be directly
+                    //below the argument
                     return curr;
                 }
             } else {
@@ -630,6 +633,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                 if (curr.right != nil) {
                     curr = curr.right;
                 } else {
+                    //the argument is larger than this node and there's no
+                    //larger element on the right, so this must be directly
+                    //below the argument
                     return curr;
                 }
             } else {
@@ -665,12 +671,18 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                 if (curr.left != nil) {
                     curr = curr.left;
                 } else {
+                    //we found an element that is larger than the argument
+                    //and there's no smaller element on the left, so the
+                    //ceiling must be this one
                     return curr;
                 }
             } else if (cmp > 0) {
                 if (curr.right != nil) {
                     curr = curr.right;
                 } else {
+                    //we found an element that's smaller than the argument
+                    //and there's no larger right child, so the ceiling must
+                    //be the successor of this node
                     return successor(curr);
                 }
             } else {
@@ -688,8 +700,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * red-black tree properties:
      * -the root must be black
      * -a red node must have black children
+     * The pseudocode for this method can be found on page 316 of CLRS.
      *
-     * @param node the node we have just inserted into the tree
+     * @param node the node we have just inserted into the tree (initially red)
      */
     private void fixInsert(Node node) {
         //continue until the parent is black
@@ -699,38 +712,41 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
                 //set the uncle to be the right child
                 uncle = node.parent.parent.right;
 
-                if (uncle != nil && uncle.color == Node.COLOUR_RED) {
+                if (uncle.color == Node.COLOUR_RED) {
+                    //case 1 - the node's uncle is red
                     node.parent.color = Node.COLOUR_BLACK;
                     uncle.color = Node.COLOUR_BLACK;
                     node.parent.parent.color = Node.COLOUR_RED;
                     node = node.parent.parent;
-                    continue;
+                } else {
+                    if (node == node.parent.right) {
+                        //case 2 - uncle is black and node is a right child
+                        node = node.parent;
+                        rotateLeft(node);
+                    }
+                    //case 3 - uncle is black and node is a left child
+                    node.parent.color = Node.COLOUR_BLACK;
+                    node.parent.parent.color = Node.COLOUR_RED;
+                    rotateRight(node.parent.parent);
                 }
-                if (node == node.parent.right) {
-                    node = node.parent;
-                    rotateLeft(node);
-                }
-                node.parent.color = Node.COLOUR_BLACK;
-                node.parent.parent.color = Node.COLOUR_RED;
-                rotateRight(node.parent.parent);
             } else {
-                //set the uncle to be the left child
+                //symmetric to the above clause with right and left exchanged
                 uncle = node.parent.parent.left;
 
-                if (uncle != nil && uncle.color == Node.COLOUR_RED) {
+                if (uncle.color == Node.COLOUR_RED) {
                     node.parent.color = Node.COLOUR_BLACK;
                     uncle.color = Node.COLOUR_BLACK;
                     node.parent.parent.color = Node.COLOUR_RED;
                     node = node.parent.parent;
-                    continue;
+                } else {
+                    if (node == node.parent.left) {
+                        node = node.parent;
+                        rotateRight(node);
+                    }
+                    node.parent.color = Node.COLOUR_BLACK;
+                    node.parent.parent.color = Node.COLOUR_RED;
+                    rotateLeft(node.parent.parent);
                 }
-                if (node == node.parent.left) {
-                    node = node.parent;
-                    rotateRight(node);
-                }
-                node.parent.color = Node.COLOUR_BLACK;
-                node.parent.parent.color = Node.COLOUR_RED;
-                rotateLeft(node.parent.parent);
             }
         }
         root.color = Node.COLOUR_BLACK;
@@ -748,28 +764,20 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      *      b  c               a  b
      *
      * The rotation preserves the properties of the red-black tree.
+     * The pseudocode for this method can be found on page 313 of CLRS.
      *
      * @param node the node to rotate about
      */
     private void rotateLeft(Node node) {
-        if (node.parent != nil) {
-            if (node == node.parent.left)
-                node.parent.left = node.right;
-            else node.parent.right = node.right;
-            node.right.parent = node.parent;
-            node.parent = node.right;
-            if (node.right.left != nil) node.right.left.parent = node;
-            node.right = node.right.left;
-            node.parent.left = node;
-        } else {
-            Node right = root.right;
-            root.right = right.left;
-            right.left.parent = root;
-            root.parent = right;
-            right.left = root;
-            right.parent = nil;
-            root = right;
-        }
+        Node rightChild = node.right;
+        node.right = rightChild.left;
+        if (rightChild.left != nil) rightChild.left.parent = node;
+        rightChild.parent = node.parent;
+        if (node.parent == nil) root = rightChild;
+        else if (node == node.parent.left) node.parent.left = rightChild;
+        else node.parent.right = rightChild;
+        rightChild.left = node;
+        node.parent = rightChild;
     }
 
     /**
@@ -788,23 +796,15 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @param node the node to rotate about
      */
     private void rotateRight(Node node) {
-        if (node.parent != nil) {
-            if (node == node.parent.left) node.parent.left = node.left;
-            else node.parent.right = node.left;
-            node.left.parent = node.parent;
-            node.parent = node.left;
-            if (node.left.right != nil) node.left.right.parent = node;
-            node.left = node.left.right;
-            node.parent.right = node;
-        } else {
-            Node left = root.left;
-            root.left = root.left.right;
-            left.right.parent = root;
-            root.parent = left;
-            left.right = root;
-            left.parent = nil;
-            root = left;
-        }
+        Node leftChild = node.left;
+        node.left = leftChild.right;
+        if (leftChild.right != nil) leftChild.right.parent = node;
+        leftChild.parent = node.parent;
+        if (node.parent == nil) root = leftChild;
+        else if (node == node.parent.right) node.parent.right = leftChild;
+        else node.parent.left = leftChild;
+        leftChild.right = node;
+        node.parent = leftChild;
     }
 
     /**
@@ -833,67 +833,73 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * -every node is either red or black
      * -the root is black
      * -if a node is red then both of its children are black
+     * The pseudocode for this method can be found on page 326 of CLRS.
      *
-     * @param x the node that occupies the deleted node's original position
+     * @param node the node that occupies the deleted node's original position
      */
-    private void fixDelete(Node x) {
-        //move up the TODO
-        while (x != root && x.color == Node.COLOUR_BLACK) {
-            if (x == x.parent.left) {
-                Node w = x.parent.right;
-                if (w.color == Node.COLOUR_RED) {
-                    w.color = Node.COLOUR_BLACK;
-                    x.parent.color = Node.COLOUR_RED;
-                    rotateLeft(x.parent);
-                    w = x.parent.right;
+    private void fixDelete(Node node) {
+        while (node != root && node.color == Node.COLOUR_BLACK) {
+            if (node == node.parent.left) {
+                Node sibling = node.parent.right;
+                if (sibling.color == Node.COLOUR_RED) {
+                    //case 1 - node's sibling is red
+                    sibling.color = Node.COLOUR_BLACK;
+                    node.parent.color = Node.COLOUR_RED;
+                    rotateLeft(node.parent);
+                    sibling = node.parent.right;
                 }
-                if (w.left.color == Node.COLOUR_BLACK && w.right.color ==
-                        Node.COLOUR_BLACK) {
-                    w.color = Node.COLOUR_RED;
-                    x = x.parent;
-                    continue;
-                } else if (w.right.color == Node.COLOUR_BLACK) {
-                    w.left.color = Node.COLOUR_BLACK;
-                    w.color = Node.COLOUR_RED;
-                    rotateRight(w);
-                    w = x.parent.right;
-                }
-                if (w.right.color == Node.COLOUR_RED) {
-                    w.color = x.parent.color;
-                    x.parent.color = Node.COLOUR_BLACK;
-                    w.right.color = Node.COLOUR_BLACK;
-                    rotateLeft(x.parent);
-                    x = root;
+                if (sibling.left.color == Node.COLOUR_BLACK
+                        && sibling.right.color == Node.COLOUR_BLACK) {
+                    //case 2 - node's sibling is black and both of the
+                    //sibling's children are black
+                    sibling.color = Node.COLOUR_RED;
+                    node = node.parent;
+                } else {
+                    if (sibling.right.color == Node.COLOUR_BLACK) {
+                        //case 3 - node's sibling is black, the node's left
+                        //child is red, and the node's right child is black
+                        sibling.left.color = Node.COLOUR_BLACK;
+                        sibling.color = Node.COLOUR_RED;
+                        rotateRight(sibling);
+                        sibling = node.parent.right;
+                    }
+                    //case 4 - the node's sibling is black and the sibling's
+                    //right child is red
+                    sibling.color = node.parent.color;
+                    node.parent.color = Node.COLOUR_BLACK;
+                    sibling.right.color = Node.COLOUR_BLACK;
+                    rotateLeft(node.parent);
+                    node = root;
                 }
             } else {
-                Node w = x.parent.left;
-                if (w.color == Node.COLOUR_RED) {
-                    w.color = Node.COLOUR_BLACK;
-                    x.parent.color = Node.COLOUR_RED;
-                    rotateRight(x.parent);
-                    w = x.parent.left;
+                //symmetric to the above clause with left and right exchanged
+                Node sibling = node.parent.left;
+                if (sibling.color == Node.COLOUR_RED) {
+                    sibling.color = Node.COLOUR_BLACK;
+                    node.parent.color = Node.COLOUR_RED;
+                    rotateRight(node.parent);
+                    sibling = node.parent.left;
                 }
-                if (w.right.color == Node.COLOUR_BLACK && w.left.color ==
-                        Node.COLOUR_BLACK) {
-                    w.color = Node.COLOUR_RED;
-                    x = x.parent;
-                    continue;
-                } else if (w.left.color == Node.COLOUR_BLACK) {
-                    w.right.color = Node.COLOUR_BLACK;
-                    w.color = Node.COLOUR_RED;
-                    rotateLeft(w);
-                    w = x.parent.left;
-                }
-                if (w.left.color == Node.COLOUR_RED) {
-                    w.color = x.parent.color;
-                    x.parent.color = Node.COLOUR_BLACK;
-                    w.left.color = Node.COLOUR_BLACK;
-                    rotateRight(x.parent);
-                    x = root;
+                if (sibling.right.color == Node.COLOUR_BLACK
+                        && sibling.left.color == Node.COLOUR_BLACK) {
+                    sibling.color = Node.COLOUR_RED;
+                    node = node.parent;
+                } else {
+                    if (sibling.left.color == Node.COLOUR_BLACK) {
+                        sibling.right.color = Node.COLOUR_BLACK;
+                        sibling.color = Node.COLOUR_RED;
+                        rotateLeft(sibling);
+                        sibling = node.parent.left;
+                    }
+                    sibling.color = node.parent.color;
+                    node.parent.color = Node.COLOUR_BLACK;
+                    sibling.left.color = Node.COLOUR_BLACK;
+                    rotateRight(node.parent);
+                    node = root;
                 }
             }
         }
-        x.color = Node.COLOUR_BLACK;
+        node.color = Node.COLOUR_BLACK;
     }
 
     /**
