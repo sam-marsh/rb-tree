@@ -62,7 +62,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * each method implemented from  the dictionary interface, to set this
      * variable back to zero.
      */
-    private int comparisons;
+    public int comparisons;
 
     /**
      * An integer to keep track of the total number of modifications on
@@ -493,6 +493,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (node.right != nil) return minimum(node.right);
         Node parent = node.parent;
         while (parent != nil && node == parent.right) {
+            ++comparisons;
             node = parent;
             parent = parent.parent;
         }
@@ -516,6 +517,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (node.left != nil) return maximum(node.left);
         Node parent = node.parent;
         while (parent != nil && node == parent.left) {
+            ++comparisons;
             node = parent;
             parent = parent.parent;
         }
@@ -684,6 +686,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     private void fixInsert(Node node) {
         //continue until the parent is black
         while (node.parent.color == Node.COLOUR_RED) {
+            ++comparisons;
             Node uncle;
             if (node.parent == node.parent.parent.left) {
                 //set the uncle to be the right child
@@ -816,6 +819,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     private void fixDelete(Node node) {
         while (node != root && node.color == Node.COLOUR_BLACK) {
+            ++comparisons;
             if (node == node.parent.left) {
                 Node sibling = node.parent.right;
                 if (sibling.color == Node.COLOUR_RED) {
@@ -919,7 +923,10 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @return the maximum node in the subtree
      */
     private Node maximum(Node node) {
-        while (node.right != nil) node = node.right;
+        while (node.right != nil) {
+            ++comparisons;
+            node = node.right;
+        }
         return node;
     }
 
@@ -929,7 +936,10 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @return the minimum node in the subtree
      */
     private Node minimum(Node node) {
-        while (node.left != nil) node = node.left;
+        while (node.left != nil) {
+            ++comparisons;
+            node = node.left;
+        }
         return node;
     }
 

@@ -27,7 +27,7 @@ Initially I implemented basic functionality of a stratified tree \cite{stratifie
 
 A red-black tree and a B-Tree seem to be very similar in efficiency, especially since a red-black is simply a type of B-Tree, as implied by the red-black tree's original name: a symmetric binary B-Tree \cite{bayer}. It was challenging to find a significant advantage of red-black trees over B-Trees, however I chose to rule out B-Trees since they may waste space if a node is not full, whereas red-black trees do not have this disadvantage.
 
-Finally, I chose a red-black tree over an AVL tree after considering the usage of the dictionary described in the project: keeping track of users logged in to a web-service. I assume that in most cases, more users log on and off than search for each other, so \textit{insertions and deletions} are more common than \textit{lookups}. Since red-black trees have generally faster inserts and deletions \cite{clrs} - whereas AVL trees are faster at searches - this would be the most appropriate choice.
+Finally, I chose a red-black tree over an AVL tree after considering the usage of the dictionary described in the project: keeping track of users logged in to a web-service. I assume that in most cases, more users log on and off than search for each other, so \textit{insertions and deletions} are more common than \textit{lookups}. Since red-black trees have generally faster inserts and deletions \cite{clrs} - whereas AVL trees are faster at searches with slower modifications - a red-black tree would be the most appropriate choice for this scenario.
 
 \subsection{Implementation}
 
@@ -44,21 +44,42 @@ Originally I implemented \code{max()} and \code{min()} to simply call the helper
 
 Upon deletion, if the item being deleted is the minimum or the maximum, then the min/max is found by searching the tree again from the root. This is a minor cost when compared to the performance gains from constant time access to the extremum of the dictionary (and doesn't make the time complexity of \code{delete(Object)} any worse).
 
-\subsubsection{Insertion/Deletion} 
-The \code{add(Object)} and \code{delete(Object)} methods are where my implementation has strong similarities to the red-black tree detailed in CLRS.
+\subsubsection{Insertion/deletion} 
 
-\begin{figure}
+\begin{figure}[b]
 \centering
 \raisebox{-.5\height}{\includegraphics[width=0.25\textwidth]{resources/before}}
 $\implies$
 \raisebox{-.5\height}{\includegraphics[width=0.25\textwidth]{resources/after}}
-\caption{Inserting characters \textit{a} to \textit{m} into the red-black tree, and then deleting the root \textit{d}. Note that in both cases, the height $h = 5$ and for a dictionary with 12-13 nodes the height bound is $h \leq 2\log_2(13+1) \approx 7$ which is satisfied by both structures.}
+\caption{Inserting characters \textit{a} to \textit{m} into the red-black tree, and then deleting the root \textit{d}. Note that in both cases, the height $h = 5$ and for a dictionary with 12-13 nodes the height bound is $h \leq 2\log_2(12+1) \approx 7$ which is satisfied by both structures.}
 \end{figure}
+
+The \code{add(Object)} and \code{delete(Object)} methods are where my implementation has strong similarities to the red-black tree detailed in CLRS.
+
+The \code{add(Object)} method creates a new node and calls the \code{insert(Node)} method, which simply finds the appropriate location for the new node, inserts it there, colours it red, and then restores the red-black tree properties using \code{fixInsert(Node)}.
+
+The \code{delete(Object)} method first locates the node to delete using a basic tree search, and replaces it with one of its children if necessary. Then it calls \code{fixDelete(Node)} to restore any red-black tree properties that may have been violated.
+
+Since detailing how red-black tree insertion and deletion work would take more space than I have room for in this report, I will instead detail some implementation decisions used in regards to \code{add} and \code{delete} (the add- and delete-related code is commented in the \code{TreeIterator} class).
+
+I chose to use a sentinel node \code{nil} for inserting and deleting, rather than null pointers. This is suggested by CLRS, and it has the advantage of not having to consider exceptional cases as frequently - instead of having to avoid dealing with null as a separate case, the \code{nil} node can be treated as any other node and have its \code{parent}, \code{left}, and \code{right} fields take on arbitrary values.
+
+I felt one disadvantage to my insertion and deletion related code is that there is a lot of symmetrical/repeated code, that deals with the same case, but having every reference to a `left' child replaced with a `right' child, and vice versa. In development I was unable to find a clean way that would enable me to abstract this to deal with both left and right cases.
 
 \subsubsection{Iteration}
 
-With the methods above, the iterator was quite simple to implement. The iterator constructor takes in a start node, stores a reference to that start node in an instance variable, and then on each call to \code{next()}, `increments' the node by replacing it with its successor (using \code{successor(Node)}) and returns the previous value.
+In implementing the above methods, I tried to `modularise' my code as much as possible - that is, for example, instead of putting the deletion code inside the public \code{delete(Object)} method, I extracted it into a separate \code{delete(Node)} method. This gave me the advantage of being able to easily implement the iterator in a short amount of time, since I could rely on \code{successor(Node)} and \code{delete(Node)} to perform all operations needed by the \code{TreeIterator} class.
+
+The iterator constructor takes in a start node, stores a reference to that start node in an instance variable, and then on each call to \code{next()}, `increments' the node by replacing it with its successor (using \code{successor(Node)}) and returns the previous value.
 
 To implement \code{Iterator\#delete()}, I also stored a reference to the last node returned by \code{next()}. On deletion, I simply call the \code{delete(Node)} method in the enclosing \code{RedBlackTree} class, and then set \code{last} to the \code{nil} sentinel. Setting this field to \code{nil} also works as a check to ensure that the iterator state is valid - if \code{last} is \code{nil}, then we know that either \code{next()} hasn't been called yet or \code{last} has already been deleted. In this case, I throw an \code{IllegalStateException}.
 
 Ensuring the iterator is fail-fast is also implemented in a fairly simple way - in the \code{RedBlackTree} class, a field \code{operations} keeps track of the total number of successful insertions and deletions on the dictionary. In the constructor of \code{TreeIterator}, this number is recorded. Then, each time a method is called on the iterator class, the two numbers are compared - if the number of operations on the tree is not the same as when the iterator was constructed, then a \code{ConcurrentModificationException} is immediately thrown.
+
+\subsubsection{Logging}
+
+Each action made on the dictionary will cause a new line to be appended to the log string. \code{getLogString()} will return this string and clear the log.
+
+Each line of the log string reports the name of the method called, the value of the argument if applicable, and the number of comparisons used for that method.
+
+Note that an assumption I have made in development is that the number of comparisons is the number of calls to \code{compareTo}, plus, in general, the number of significant colour comparisons (e.g. in \code{fixInsert(Node)} the number of times the parent node's colour is checked) and significant reference equality checks (e.g. moving down the tree in the \code{minimum(Node)} method.
