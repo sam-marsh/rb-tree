@@ -87,15 +87,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
-     * Resets the comparison counter. Used at the start of each public method
-     * defined in the {@link Dictionary} interface, so that the number of
-     * node comparisons can be kept track of (for the log string).
-     */
-    private void reset() {
-        comparisons = 0;
-    }
-
-    /**
      * Checks if the dictionary is empty.
      *
      * @return true if and only if the dictionary contains no elements.
@@ -103,26 +94,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean isEmpty() {
         return isEmpty(false);
-    }
-
-    /**
-     * Internal method for checking if the dictionary is empty. See
-     * documentation of method {@link #isEmpty()}. This method is also called
-     * from other methods, in which case it should <i>not</i> be appended to
-     * the log string. In the case that the client calls the
-     * {@link #isEmpty()} method, it <i>should</i> be appended to the log
-     * string.
-     *
-     * @param quiet if this parameter is true, the call will not be appended
-     *              to the log string. If false, it will log the call.
-     * @return true iff the dictionary contains no elements.
-     */
-    private boolean isEmpty(boolean quiet) {
-        if (!quiet) {
-            reset();
-            log("isEmpty()");
-        }
-        return root == nil;
     }
 
     /**
@@ -222,52 +193,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
-     * Finds the successor of a node. Used in the
-     * {@link TreeIterator#next()} method when iterating over the dictionary.
-     *
-     * @param node the node to find the successor for
-     * @return nil if the node doesn't have a successor, otherwise the
-     * least node greater than the argument
-     */
-    private Node successor(Node node) {
-        //fairly basic strategy - if the node has a right child, the
-        //successor is the minimum node of that subtree, otherwise move up
-        //the tree until we find a node such that the node is a left child -
-        //then the successor will be the parent of that node
-        if (node == nil || node == max) return nil;
-        if (node.right != nil) return minimum(node.right);
-        Node parent = node.parent;
-        while (parent != nil && node == parent.right) {
-            node = parent;
-            parent = parent.parent;
-        }
-        return parent;
-    }
-
-    /**
-     * Finds the successor of a node. Used in the
-     * {@link TreeIterator#next()} method when iterating over the dictionary.
-     *
-     * @param node the node to find the successor for
-     * @return nil if the node doesn't have a successor, otherwise the
-     * least node greater than the argument
-     */
-    private Node predecessor(Node node) {
-        //fairly basic strategy - if the node has a left child, the
-        //predecessor is the minimum node of that subtree, otherwise move up
-        //the tree until we find a node such that the node is a right child -
-        //then the predecessor will be the parent of that node
-        if (node == nil || node == max) return nil;
-        if (node.left != nil) return maximum(node.left);
-        Node parent = node.parent;
-        while (parent != nil && node == parent.left) {
-            node = parent;
-            parent = parent.parent;
-        }
-        return parent;
-    }
-
-    /**
      * Finds the least element in the dictionary. Runs in constant time.
      *
      * @return the minimum (smallest) item in the dictionary
@@ -316,59 +241,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
-     * Internal method to insert a node into the red-black tree, and
-     * re-balance/restore red-black tree properties if necessary.
-     *
-     * @param toInsert the node to insert into the dictionary
-     * @return true if the node was successfully inserted - that is, if the
-     * dictionary didn't already contain the node.
-     */
-    private boolean insert(Node toInsert) {
-        if (toInsert.key == null) return false;
-        Node curr = root;
-        //if the tree is empty, we simply set up the root node and then
-        //return early, since we don't need to do any further
-        //fixing/comparisons.
-        if (isEmpty(true)) {
-            root = toInsert;
-            toInsert.color = Node.COLOUR_BLACK;
-            toInsert.parent = nil;
-            min = max = root;
-            return true;
-        } else {
-            toInsert.color = Node.COLOUR_RED;
-            //locate the position to insert the new node
-            while (true) {
-                int cmp = compare(toInsert, curr);
-                if (cmp < 0) {
-                    if (curr.left == nil) {
-                        curr.left = toInsert;
-                        toInsert.parent = curr;
-                        break;
-                    } else curr = curr.left;
-                } else if (cmp > 0) {
-                    if (curr.right == nil) {
-                        curr.right = toInsert;
-                        toInsert.parent = curr;
-                        break;
-                    } else curr = curr.right;
-                } else if (cmp == 0) return false;
-            }
-            //after insertion, we re-balance/restore red-black tree properties
-            fixInsert(toInsert);
-        }
-        //the below code uses two more comparisons to check if the new node
-        //is the new max/min of the tree, and updating if necessary.
-        if (min == nil || max == nil) {
-            min = max = toInsert;
-        } else {
-            if (compare(toInsert, min) < 0) min = toInsert;
-            else if (compare(toInsert, max) > 0) max = toInsert;
-        }
-        return true;
-    }
-
-    /**
      * Removes an item from the dictionary, if it is contained in the
      * dictionary.
      *
@@ -396,79 +268,6 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         ++operations; //we successfully deleted an item
         log(String.format("delete(%s)", item));
         return true;
-    }
-
-    /**
-     * Internal method to delete a node from the red-black tree, and restore
-     * red-black tree properties if necessary.
-     *
-     * @param toDelete the node to remove from the dictionary
-     */
-    private void delete(Node toDelete) {
-        //the node that moves into curr's original position in the tree
-        Node move;
-        //the node either removed from the tree or moved within the tree
-        Node curr = toDelete;
-        //the original colour of the node to delete - we need to save this in
-        //order to check the colour at the end of the method - if it is black
-        //then we need to fix possible violations of the red-black tree
-        //properties.
-        int yOrigColour = curr.color;
-
-        //check the cases - dependent on how many children the node has
-        if (toDelete.left == nil) {
-            //if the node to delete doesn't have a left child, just replace it
-            //by the right child
-            move = toDelete.right;
-            transplant(toDelete, toDelete.right);
-        } else if (toDelete.right == nil) {
-            //and vice versa for the left child
-            move = toDelete.left;
-            transplant(toDelete, toDelete.left);
-        } else {
-            //if it has two children, find the successor
-            curr = minimum(toDelete.right);
-            //update the colour before any changes to the tree structure occur
-            yOrigColour = curr.color;
-            move = curr.right;
-            if (curr.parent == toDelete) {
-                move.parent = curr;
-            } else {
-                transplant(curr, curr.right);
-                curr.right = toDelete.right;
-                curr.right.parent = curr;
-            }
-            transplant(toDelete, curr);
-            curr.left = toDelete.left;
-            curr.left.parent = curr;
-            curr.color = toDelete.color;
-        }
-
-        //if the node colour was black then we might have violated the
-        //properties of a red-black tree - so fix up the tree
-        if (yOrigColour == Node.COLOUR_BLACK)
-            fixDelete(move);
-
-        //finally, update the references to the min/max if necessary
-        if (isEmpty(true)) min = max = nil;
-        else if (toDelete == min) min = minimum(root);
-        else if (toDelete == max) max = maximum(root);
-    }
-
-    /**
-     * Gives the result of {@link Comparable#compareTo(Object)} when
-     * comparing the first node to the second, and also increments the number
-     * of comparisons used. This method is used instead of {@link
-     * Comparable#compareTo(Object)} to keep track of comparisons for the log
-     * string.
-     *
-     * @param n1 the first node
-     * @param n2 the node to compare the first node to
-     * @return the result of n1.compareTo(n2)
-     */
-    private int compare(Node n1, Node n2) {
-        ++comparisons;
-        return n1.compareTo(n2);
     }
 
     /**
@@ -543,6 +342,182 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         String ret = isEmpty(true) ? "└── \n" : root.toString();
         log("toString()");
         return ret;
+    }
+
+    /**
+     * Internal method to insert a node into the red-black tree, and
+     * re-balance/restore red-black tree properties if necessary.
+     *
+     * @param toInsert the node to insert into the dictionary
+     * @return true if the node was successfully inserted - that is, if the
+     * dictionary didn't already contain the node.
+     */
+    private boolean insert(Node toInsert) {
+        if (toInsert.key == null) return false;
+        Node curr = root;
+        //if the tree is empty, we simply set up the root node and then
+        //return early, since we don't need to do any further
+        //fixing/comparisons.
+        if (isEmpty(true)) {
+            root = toInsert;
+            toInsert.color = Node.COLOUR_BLACK;
+            toInsert.parent = nil;
+            min = max = root;
+            return true;
+        } else {
+            toInsert.color = Node.COLOUR_RED;
+            //locate the position to insert the new node
+            while (true) {
+                int cmp = compare(toInsert, curr);
+                if (cmp < 0) {
+                    if (curr.left == nil) {
+                        curr.left = toInsert;
+                        toInsert.parent = curr;
+                        break;
+                    } else curr = curr.left;
+                } else if (cmp > 0) {
+                    if (curr.right == nil) {
+                        curr.right = toInsert;
+                        toInsert.parent = curr;
+                        break;
+                    } else curr = curr.right;
+                } else if (cmp == 0) return false;
+            }
+            //after insertion, we re-balance/restore red-black tree properties
+            fixInsert(toInsert);
+        }
+        //the below code uses two more comparisons to check if the new node
+        //is the new max/min of the tree, and updating if necessary.
+        if (min == nil || max == nil) {
+            min = max = toInsert;
+        } else {
+            if (compare(toInsert, min) < 0) min = toInsert;
+            else if (compare(toInsert, max) > 0) max = toInsert;
+        }
+        return true;
+    }
+
+    /**
+     * Internal method to delete a node from the red-black tree, and restore
+     * red-black tree properties if necessary.
+     *
+     * @param toDelete the node to remove from the dictionary
+     */
+    private void delete(Node toDelete) {
+        //the node that moves into curr's original position in the tree
+        Node move;
+        //the node either removed from the tree or moved within the tree
+        Node curr = toDelete;
+        //the original colour of the node to delete - we need to save this in
+        //order to check the colour at the end of the method - if it is black
+        //then we need to fix possible violations of the red-black tree
+        //properties.
+        int yOrigColour = curr.color;
+
+        //check the cases - dependent on how many children the node has
+        if (toDelete.left == nil) {
+            //if the node to delete doesn't have a left child, just replace it
+            //by the right child
+            move = toDelete.right;
+            transplant(toDelete, toDelete.right);
+        } else if (toDelete.right == nil) {
+            //and vice versa for the left child
+            move = toDelete.left;
+            transplant(toDelete, toDelete.left);
+        } else {
+            //if it has two children, find the successor
+            curr = minimum(toDelete.right);
+            //update the colour before any changes to the tree structure occur
+            yOrigColour = curr.color;
+            move = curr.right;
+            if (curr.parent == toDelete) {
+                move.parent = curr;
+            } else {
+                transplant(curr, curr.right);
+                curr.right = toDelete.right;
+                curr.right.parent = curr;
+            }
+            transplant(toDelete, curr);
+            curr.left = toDelete.left;
+            curr.left.parent = curr;
+            curr.color = toDelete.color;
+        }
+
+        //if the node colour was black then we might have violated the
+        //properties of a red-black tree - so fix up the tree
+        if (yOrigColour == Node.COLOUR_BLACK)
+            fixDelete(move);
+
+        //finally, update the references to the min/max if necessary
+        if (isEmpty(true)) min = max = nil;
+        else if (toDelete == min) min = minimum(root);
+        else if (toDelete == max) max = maximum(root);
+    }
+
+    /**
+     * Internal method for checking if the dictionary is empty. See
+     * documentation of method {@link #isEmpty()}. This method is also called
+     * from other methods, in which case it should <i>not</i> be appended to
+     * the log string. In the case that the client calls the
+     * {@link #isEmpty()} method, it <i>should</i> be appended to the log
+     * string.
+     *
+     * @param quiet if this parameter is true, the call will not be appended
+     *              to the log string. If false, it will log the call.
+     * @return true iff the dictionary contains no elements.
+     */
+    private boolean isEmpty(boolean quiet) {
+        if (!quiet) {
+            reset();
+            log("isEmpty()");
+        }
+        return root == nil;
+    }
+
+    /**
+     * Finds the successor of a node. Used in the
+     * {@link TreeIterator#next()} method when iterating over the dictionary.
+     *
+     * @param node the node to find the successor for
+     * @return nil if the node doesn't have a successor, otherwise the
+     * least node greater than the argument
+     */
+    private Node successor(Node node) {
+        //fairly basic strategy - if the node has a right child, the
+        //successor is the minimum node of that subtree, otherwise move up
+        //the tree until we find a node such that the node is a left child -
+        //then the successor will be the parent of that node
+        if (node == nil || node == max) return nil;
+        if (node.right != nil) return minimum(node.right);
+        Node parent = node.parent;
+        while (parent != nil && node == parent.right) {
+            node = parent;
+            parent = parent.parent;
+        }
+        return parent;
+    }
+
+    /**
+     * Finds the successor of a node. Used in the
+     * {@link TreeIterator#next()} method when iterating over the dictionary.
+     *
+     * @param node the node to find the successor for
+     * @return nil if the node doesn't have a successor, otherwise the
+     * least node greater than the argument
+     */
+    private Node predecessor(Node node) {
+        //fairly basic strategy - if the node has a left child, the
+        //predecessor is the minimum node of that subtree, otherwise move up
+        //the tree until we find a node such that the node is a right child -
+        //then the predecessor will be the parent of that node
+        if (node == nil || node == max) return nil;
+        if (node.left != nil) return maximum(node.left);
+        Node parent = node.parent;
+        while (parent != nil && node == parent.left) {
+            node = parent;
+            parent = parent.parent;
+        }
+        return parent;
     }
 
     /**
@@ -903,6 +878,31 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
+     * Gives the result of {@link Comparable#compareTo(Object)} when
+     * comparing the first node to the second, and also increments the number
+     * of comparisons used. This method is used instead of {@link
+     * Comparable#compareTo(Object)} to keep track of comparisons for the log
+     * string.
+     *
+     * @param n1 the first node
+     * @param n2 the node to compare the first node to
+     * @return the result of n1.compareTo(n2)
+     */
+    private int compare(Node n1, Node n2) {
+        ++comparisons;
+        return n1.compareTo(n2);
+    }
+
+    /**
+     * Resets the comparison counter. Used at the start of each public method
+     * defined in the {@link Dictionary} interface, so that the number of
+     * node comparisons can be kept track of (for the log string).
+     */
+    private void reset() {
+        comparisons = 0;
+    }
+
+    /**
      * Adds a new line to the log string describing the method that was just
      * called and the number of comparisons made.
      * @param method the method name.
@@ -1082,8 +1082,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         @Override
         public boolean hasNext() throws ConcurrentModificationException {
             if (ops != operations)
-                throw new ConcurrentModificationException("backing dictionary" +
-                        " has been modified");
+                throw new ConcurrentModificationException(
+                        "backing dictionary has been modified"
+                );
             return next != nil;
         }
 
