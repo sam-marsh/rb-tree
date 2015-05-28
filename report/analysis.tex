@@ -36,12 +36,12 @@ Red-black trees have five main properties:
 \item Every path from a node to a leaf descendent contains the same number of black nodes.
 \end{enumerate}
 
-Since the height of the tree is referenced in demonstrating the time complexity of almost every method in the class, I first prove that the following limit on the height of a red-black tree \parencite{clrs}:
+Since the height of the tree is referenced in demonstrating the worst-case time complexity of almost every method in the class, I first prove the following limit on the height of a red-black tree \parencite{clrs}:
 \begin{equation*}
 h \leq 2\log_2(n+1)
 \end{equation*}
 \begin{proof}
-To begin, we prove that a subtree with root node $n$ has a minimum of $2^{h_b(n)} - 1$ internal nodes (where $b_h(n)$, the 'black-height' of $n$, is the number of black nodes on any path from the node $n$ to any leaf, not including $n$): we do this by induction. For the base case - if the black height of $n$ is zero, then $n$ must be a leaf - and so $2^0 - 1 = 0$ is the number of internal nodes. So it holds for $b_h(n) = 0$. Now we assume that a node $n$ has a positive height and two children (i.e. $n$ is an internal node). Then each child must have a height of $b_h(n)$ or $b_h(n) - 1$, depending on the colour of the child. We can then apply the inductive hypothesis to the children - then each child has $2^{b_h(n) - 1} - 1$ internal nodes. Therefore we can simply sum the number of internal nodes of the two child subtrees to prove the claim - the subtree rooted at $n$ will have at least $(2^{b_h(n) - 1} - 1) + (2^{b_h(n) - 1} - 1) + 1 = 2^{b_h(n)} - 1$ internal nodes.
+To begin, we prove that a subtree with root node $n$ has a minimum of $2^{h_b(n)} - 1$ internal nodes (where $b_h(n)$, the `black-height' of $n$, is the number of black nodes on any path from the node $n$ to any leaf, not including $n$): we do this by induction. For the base case - if the black height of $n$ is zero, then $n$ must be a leaf - and so $2^0 - 1 = 0$ is the number of internal nodes. So it holds for $b_h(n) = 0$. Now we assume that a node $n$ has a positive height and two children (i.e. $n$ is an internal node). Then each child must have a height of $b_h(n)$ or $b_h(n) - 1$, depending on the colour of the child. We can then apply the inductive hypothesis to the children - then each child has $2^{b_h(n) - 1} - 1$ internal nodes. Therefore we can simply sum the number of internal nodes of the two child subtrees to prove the claim - the subtree rooted at $n$ will have at least $(2^{b_h(n) - 1} - 1) + (2^{b_h(n) - 1} - 1) + 1 = 2^{b_h(n)} - 1$ internal nodes.
 
 With the above combined with red-black tree properties, we can complete the proof: if we have a tree of height $h$, then according to the fourth property of red-black trees, at least half of the nodes on any path from the root to a given leaf (not including the root) are black. So $b_h(r) \geq \frac{h}{2}$, where $r$ is the root node of the tree. Then $n \geq 2^{\frac h 2} - 1$, and $h \leq 2\log_2(n + 1)$ follows.
 \end{proof}
@@ -57,7 +57,8 @@ This method calls the helper method \code{locate(Node)} which is linear in the h
 These methods make a single comparison with the current minimum/maximum of the dictionary, to ensure that there is a smaller/larger element in the dictionary. Since the extremum of the dictionary can be accessed in constant time, this comparison is independent of the size of the dictionary, so these methods are O(1).
 
 \subsubsection{\code{predecessor(Object)} and \code{successor(Object)}}
-These methods move down the tree, starting at the root, in essentially the same fashion as described in \code{contains(Object)}. However in addition, they also keep track of the greatest/least element found so far, which is not larger/smaller than the argument. Since there are at most 2 comparisons made per iteration (one to check whether we should move to the left or right subtree, and possibly one to update the current best successor/predecessor), and the method will iterate at most $h$ times, these methods will run in O(log n) time.
+These methods call the internal methods \code{below(Node)} and \code{above(Node)} respectively: I will show that \code{below(Node)} runs in logarithmic time, and then \code{above(Node)} is symmetric to this. \code{below(Node)} starts at the root and then navigates down the tree in a similar fashion to \code{locate(Node)}, generally moving to the right child if the argument is larger than the current node, and moving left if it's less than or equal to the current node. Since it moves strictly down the tree, it can iterate at most $h$ times - therefore being logarithmic.
+Once it reaches some point in the tree - (where the right/left child is \code{nil}) then it will, in the worst case, need to return call the \code{predecessor(Node)} method and return the result. Since the \code{predecessor(Node)} method also runs in O(log n) time (it either returns the maximum node of the left subtree or moves up the tree until it finds a node which is a right child), then the total time is on the order of O(log n + log n) = O(log n).
 
 \subsubsection{\code{min()} and \code{max()}}
 These two methods run in constant time as fields referencing the current minimum and maximum are kept updated upon insertions and deletions to the dictionary. So \code{min()} and \code{max()} simply access these fields, making them O(1).
@@ -82,7 +83,7 @@ This method was adapted from a \href{http://stackoverflow.com/}{StackOverflow} p
 
 This section gives experimental data on the efficiency of the implementation.
 
-For demonstration of experimental correctness, please refer to the JUnit tests given in the \code{/test/java/DictionaryTest.java} file. JUnit 4.12 was used, and all tests passed at the time of project submission.
+For demonstration of experimental correctness, refer to the JUnit tests which can be found in the \code{/test/java/DictionaryTest.java} file. JUnit 4.12 was used, and all tests passed at the time of project submission.
 
 Experimental data was obtained by repeatedly running a given method and averaging the result. Each run, the elements are randomly shuffled before being inserted into the dictionary to allow for various internal structures. MATLAB R2014a was used for data visualisation in the figures below.
 
@@ -139,4 +140,4 @@ For the other methods required by the \code{Dictionary} interface, the average n
 \caption{Mean number of comparisons made on a dictionary of 10,000 elements, averaged over 100 trials and split into two columns depending on whether the argument is in the dictionary or not.}
 \end{table}
 
-The above table makes sense: the 'search' methods (\code{contains}, \code{successor}, etc.) take 12 or 13 comparisons. \code{add} takes approximately 2-3 more since it also compares the element with the current tree minimum and maximum. The constant time methods (\code{isEmpty}, \code{min}, \code{max}) need no comparisons. \code{iterator(Object)} uses the most comparisons since when finding the least element greater than the argument, it needs to keep track of the current least element and compare it with each new possibility when traversing down a subtree. \code{toString} also technically uses zero comparisons, while still being the slowest method (having to visit all nodes results in linear time).
+Table 3 is consistent with the analysis section. The constant time methods take 0 or 1 comparisons. \code{contains(Object)} takes slightly longer if the element is not in the dictionary (since it has to search down the full height of the tree). \code{add(Object)} takes around 2-3 comparisons more if the item is not already in the dictionary, since it also needs to check if it is necessary to update the \code{min}/\code{max} fields. \code{delete(Object)} takes more comparisons if the element is not in the dictionary, for the same reason as \code{contains(Object)}.

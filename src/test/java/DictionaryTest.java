@@ -176,8 +176,8 @@ public class DictionaryTest {
 
     @After
     public void printLog() throws IOException {
-        //System.out.println(dictionary.getLogString());
-        //System.out.print(dictionary);
+        System.out.println(dictionary.getLogString());
+        System.out.print(dictionary);
     }
 
 }

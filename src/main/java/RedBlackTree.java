@@ -62,7 +62,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * each method implemented from  the dictionary interface, to set this
      * variable back to zero.
      */
-    public int comparisons;
+    private int comparisons;
 
     /**
      * An integer to keep track of the total number of modifications on
@@ -83,8 +83,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         nil = new Node(null);
         log = new StringBuilder();
         root = min = max = nil;
-        comparisons = 0;
-        operations = 0;
+        comparisons = operations = 0;
     }
 
     /**
@@ -136,7 +135,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean contains(E item) {
         reset();
-        boolean ret = locate(new Node(item)) != nil;
+        boolean ret = item != null
+                && locate(new Node(item)) != nil;
         log(String.format("contains(%s)", item));
         return ret;
     }
@@ -154,7 +154,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasPredecessor(E item) {
         reset();
-        boolean ret = !isEmpty(true) && compare(new Node(item), min) > 0;
+        boolean ret = item != null
+                && !isEmpty(true)
+                && compare(new Node(item), min) > 0;
         log(String.format("hasPredecessor(%s)", item));
         return ret;
     }
@@ -172,7 +174,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean hasSuccessor(E item) {
         reset();
-        boolean ret = !isEmpty(true) && compare(new Node(item), max) < 0;
+        boolean ret = item != null
+                && !isEmpty(true)
+                && compare(new Node(item), max) < 0;
         log(String.format("hasSuccessor(%s)", item));
         return ret;
     }
@@ -271,8 +275,8 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E min() throws NoSuchElementException {
-        if (isEmpty(true)) throw new NoSuchElementException("Dictionary is " +
-                "empty");
+        if (isEmpty(true))
+            throw new NoSuchElementException("dictionary is empty");
         reset();
         log("min()");
         return min.key;
@@ -287,7 +291,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public E max() throws NoSuchElementException {
         if (isEmpty(true))
-            throw new NoSuchElementException("Dictionary is empty");
+            throw new NoSuchElementException("dictionary is empty");
         reset();
         log("max()");
         return max.key;
@@ -305,7 +309,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean add(E item) {
         reset();
         Node node = new Node(item);
-        boolean tmp = insert(node);
+        boolean tmp = node.key != null && insert(node);
         if (tmp) ++operations; //we successfully added an item
         log(String.format("add(%s)", item));
         return tmp;
@@ -375,8 +379,19 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean delete(E item) {
         reset();
+        if (item == null) {
+            log("delete(null)");
+            return false;
+        }
+        if (isEmpty(true)) {
+            log(String.format("delete(%s)", item));
+            return false;
+        }
         Node z = locate(new Node(item));
-        if (z == nil) return false;
+        if (z == nil) {
+            log(String.format("delete(%s)", item));
+            return false;
+        }
         delete(z);
         ++operations; //we successfully deleted an item
         log(String.format("delete(%s)", item));
@@ -481,10 +496,14 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * @return an iterator whose next element is the least element greater
      * than or equal to start in the dictionary, and which will iterate
      * through all the elements in the Dictionary in ascending order
+     * @throws IllegalArgumentException if the argument is null
      */
     @Override
-    public Iterator<E> iterator(E start) {
+    public Iterator<E> iterator(E start) throws IllegalArgumentException {
         reset();
+        if (start == null) {
+            throw new IllegalArgumentException("argument is null");
+        }
         Iterator<E> ret = new TreeIterator(
                 ceiling(new Node(start)));
         log(String.format("iterator(%s)", start));
@@ -1079,10 +1098,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         public E next() throws NoSuchElementException,
                 ConcurrentModificationException {
             if (!hasNext())
-                throw new NoSuchElementException("No further elements");
+                throw new NoSuchElementException("no further elements");
             if (ops != operations)
-                throw new ConcurrentModificationException("backing dictionary" +
-                        " has been modified");
+                throw new ConcurrentModificationException(
+                        "backing dictionary has been modified"
+                );
             last = next;
             next = successor(next);
             return last.key;
@@ -1102,12 +1122,18 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
          * construction
          */
         @Override
-        public void remove() throws IllegalStateException {
+        public void remove() throws IllegalStateException,
+                ConcurrentModificationException {
             if (ops != operations)
-                throw new ConcurrentModificationException("backing dictionary" +
-                        " has been modified");
+                throw new ConcurrentModificationException(
+                        "backing dictionary has been modified"
+                );
             if (last == nil)
-                throw new IllegalStateException("");
+                throw new IllegalStateException(
+                        "next() has not yet been called, or the remove() " +
+                                "method has already been called after the " +
+                                "last call to the next() method"
+                );
             delete(last);
             //set last to nil so that if this method is called again without
             //calling next first, an exception will be thrown
