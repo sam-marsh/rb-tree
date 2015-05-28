@@ -70,7 +70,7 @@ These two methods run in constant time as fields referencing the current minimum
 Firstly: the constructor for the internal class \code{TreeIterator} runs in O(1) time, since it is passed the start node as an argument and stores this reference in a field in preparation for the first call to \code{next()}. Since for this method we start at the minimum element in the dictionary and iterate through to the maximum, and we can access the minimum element in constant time and simply pass it as a parameter to the \code{TreeIterator} constructor, the whole method takes O(1) time.
 
 \subsubsection{\code{iterator(Object)}}
-This method, although similar in functionality to \code{iterator()} does \textit{not} take constant time: it first needs to find the least node with key greater than the input argument. The method makes a call to the private method \code{locateMinNodeGreaterThan(Node)}, which is also used in \code{successor(Object)} and runs in logarithmic time - because it moves strictly down the tree, performing at most two comparisons each iteration. It iterates at most $h$ times, making this method O(log n).
+This method, although similar in functionality to \code{iterator()} does \textit{not} take constant time: it first needs to find the least node with key greater than the input argument. The method makes a call to the private method \code{ceiling(Node)}. The method \code{ceiling(Node)} is very similar in functionality to \code{above(Node)}, which is used in \code{successor(Object)}.
 
 \subsubsection{\code{getLogString()}}
 \code{getLogString()} retrieves the string value of the \code{StringBuilder} log field and then resets the log. This is independent of the number of elements in the dictionary, therefore running in O(1) time.
@@ -87,7 +87,7 @@ For demonstration of experimental correctness, please refer to the JUnit tests g
 Experimental data was obtained by repeatedly running a given method and averaging the result. Each run, the elements are randomly shuffled before being inserted into the dictionary to allow for various internal structures. MATLAB R2014a was used for data visualisation in the figures below.
 
 \subsubsection{Summary}
-For \code{add}, \code{delete} and \code{contains}, plot data was averaged over 100 trials. Each trial recorded the number of comparisons made on dictionaries of size ranging from 0 to 100,000.
+For \code{add}, \code{delete} and \code{contains}, plot data was averaged over 100 trials. Each trial recorded the number of comparisons made on dictionaries of size ranging from 0 to 10,000.
 
 Plots of the growth of the number of comparisons for adding, deleting and searching are below. Both linear-linear and log-linear graphs are provided to demonstrate the logarithmic growth of the functions.
 
@@ -97,7 +97,7 @@ For the other methods required by the \code{Dictionary} interface, the average n
     \centering
     \includegraphics[width=0.49\textwidth]{resources/add}
     \includegraphics[width=0.49\textwidth]{resources/add_log}
-    \caption{The number of comparisons made when adding a random distinct element to a dictionary of size n}
+    \caption{The number of comparisons made when adding a random distinct element to a dictionary of size n (linear and log-linear scale)}
 
 \end{figure}
 
@@ -105,37 +105,38 @@ For the other methods required by the \code{Dictionary} interface, the average n
     \centering
     \includegraphics[width=0.49\textwidth]{resources/del}
     \includegraphics[width=0.49\textwidth]{resources/del_log}
-    \caption{The number of comparisons made when deleting a random element from a dictionary of size n}
+    \caption{The number of comparisons made when deleting a random element from a dictionary of size n (linear and log-linear scale)}
 \end{figure}
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.49\textwidth]{resources/search}
     \includegraphics[width=0.49\textwidth]{resources/search_log}
-    \caption{The number of comparisons made when searching for a random element in a dictionary of size n}
+    \caption{The number of comparisons made when searching for a random element in a dictionary of size n (linear and log-linear scale)}
 \end{figure}
 
 \begin{table}[!htbp]
 \centering
-\begin{tabular}{| l | l |}
+\begin{tabular}{| l | l | l |}
 	\hline
-	\textbf{Method} & \textbf{Comparisons} \\ \hline
-	\code{isEmpty()} & 0.0 \\ \hline
-	\code{contains(Object)} & 12.6 \\ \hline
-	\code{hasPredecessor(Object)} & 1.0 \\ \hline
-	\code{hasSuccessor(Object)} & 1.0 \\ \hline
-	\code{predecessor(Object)} & 12.4 \\ \hline
-	\code{successor(Object)} & 12.6 \\ \hline
-	\code{min()} & 0.0 \\ \hline
-	\code{max()} & 0.0 \\ \hline
-	\code{add(Object)} & 15.5 \\ \hline
-	\code{delete(Object)} & 12.4 \\ \hline
-	\code{iterator()} & 0.0 \\ \hline
-	\code{iterator(Object)} & 18.4 \\ \hline
-	\code{toString()} & 0.0 \\
+	\textbf{Method} & \multicolumn{2}{c |}{\textbf{Comparisons}} \\ \hline
+	& \textbf{In dictionary} & \textbf{Not in dictionary} \\ \hline
+	\code{isEmpty()} & \multicolumn{2}{l |}{0.0}  \\ \hline
+	\code{contains(Object)} & 12.6 & 13.3 \\ \hline
+	\code{hasPredecessor(Object)} & \multicolumn{2}{l |}{1.0} \\ \hline
+	\code{hasSuccessor(Object)} & \multicolumn{2}{l |}{1.0}  \\ \hline
+	\code{predecessor(Object)} & 13.5 & 13.2 \\ \hline
+	\code{successor(Object)} & 13.5 & 13.3 \\ \hline
+	\code{min()} & \multicolumn{2}{l |}{0.0}  \\ \hline
+	\code{max()} & \multicolumn{2}{l |}{0.0}  \\ \hline
+	\code{add(Object)} & 12.5 & 15.3 \\ \hline
+	\code{delete(Object)} & 12.5 & 13.4 \\ \hline
+	\code{iterator()} & \multicolumn{2}{l |}{0.0} \\ \hline
+	\code{iterator(Object)} & 12.4 & 13.2\\ \hline
+	\code{toString()} & \multicolumn{2}{l |}{0.0} \\
 	\hline
 \end{tabular}
-\caption{Mean number of comparisons made on a dictionary of 10,000 elements, averaged over 100 trials.}
+\caption{Mean number of comparisons made on a dictionary of 10,000 elements, averaged over 100 trials and split into two columns depending on whether the argument is in the dictionary or not.}
 \end{table}
 
-The above table makes sense: the 'search' methods (\code{contains}, \code{hasPredecessor}, \code{successor}, etc.) take 12 or 13 comparisons. \code{add} takes approximately 2-3 more since it also compares the element with the current tree minimum and maximum. The constant time methods (\code{isEmpty}, \code{min}, \code{max}) need no comparisons. \code{iterator(Object)} uses the most comparisons since when finding the least element greater than the argument, it needs to keep track of the current least element and compare it with each new possibility when traversing down a subtree. \code{toString} also technically uses zero comparisons, while still being the slowest method (having to visit all nodes results in linear time).
+The above table makes sense: the 'search' methods (\code{contains}, \code{successor}, etc.) take 12 or 13 comparisons. \code{add} takes approximately 2-3 more since it also compares the element with the current tree minimum and maximum. The constant time methods (\code{isEmpty}, \code{min}, \code{max}) need no comparisons. \code{iterator(Object)} uses the most comparisons since when finding the least element greater than the argument, it needs to keep track of the current least element and compare it with each new possibility when traversing down a subtree. \code{toString} also technically uses zero comparisons, while still being the slowest method (having to visit all nodes results in linear time).

@@ -11,22 +11,34 @@ After examining the time complexity for various dictionary implementations, I de
 \begin{tabular}{| l | l | l | l |}
 \hline
 \textbf{Implementation} & \textbf{Search} & \textbf{Insert} & \textbf{Delete} \\ \hline
-AVL tree & O(lg n) & O(lg n) & O(lg n) \\ \hline
-Red-black tree & O(lg n) & O(lg n) & O(lg n) \\ \hline
-B-Tree & O(lg n) & O(lg n) & O(lg n) \\ \hline
-Splay tree & (a) O(lg n) & (a) O(lg n) & (a) O(lg n) \\ \hline
+AVL tree & O(log n) & O(log n) & O(log n) \\ \hline
+\color{red} Red-black tree & \color{red} O(log n) & \color{red} O(log n) & \color{red} O(log n) \\ \hline
+B-Tree & O(log n) & O(log n) & O(log n) \\ \hline
+Splay tree & (a) O(log n) & (a) O(log n) & (a) O(log n) \\ \hline
 Skip list & O(n) & O(n) & O(n) \\ \hline
 Trie & O(m) & O(m) & O(m) \\ \hline
-Stratified tree & O(lg lg N) & O(lg lg N) & O(lg lg N) \\ \hline
+Stratified tree & O(log log N) & O(log log N) & O(log log N) \\ \hline
 \end{tabular}
 \\{\tiny{(n = number of elements in data structure, m = length of string, N = size of universe, (a) = amortised)}}\\
 \caption{Considered data structures along with their worst-case time complexities.}
 \end{table}
 
-When deciding on the optimal data structure, I first ruled out splay tree and skip list, since the skip list worst case time is above the required O(lg n) and there are other data structures faster than the splay tree, where amortisation is not required. I then ruled out Trie, although it is extremely fast (independent of size of dictionary), since I aimed to implement a general-purpose dictionary and Trie only holds strings \parencite{trie}.
+When deciding on the optimal data structure, I first ruled out splay tree and skip list, since the skip list worst case time is above the required O(log n) and there are other data structures faster than the splay tree, where amortisation is not required. I then ruled out Trie, although it is extremely fast (independent of size of dictionary), since I aimed to implement a general-purpose dictionary and Trie only holds strings \parencite{trie}.
 
-Initially I implemented basic functionality of a stratified tree \parencite{stratified}, also known as a van Emde Boas tree. The implementation had extremely fast lookup (\code{contains}, \code{max}, \code{min} O(1), and \code{successor}, \code{predecessor}, \code{add}, \code{delete} O(lg lg N)). However, my primary aim for this project was a \textit{general-purpose} and \textit{unbounded} dictionary. van Emde Boas trees are extremely fast, however the domain is bounded and each element requires an associated integer key. In the end I decided that van Emde Boas trees are too restrictive, and also more suited for a dictionary interface defined using keys and values (like \code{java.util.Map.put(K key, V value)}) and thus a more general purpose and unbounded but less efficient O(lg n) solution would be more appropriate for this situation.
+Initially I implemented basic functionality of a stratified tree \parencite{stratified}, also known as a van Emde Boas tree. The implementation had extremely fast lookup (\code{contains}, \code{max}, \code{min} O(1), and \code{successor}, \code{predecessor}, \code{add}, \code{delete} O(log log N)). However, my primary aim for this project was a \textit{general-purpose} and \textit{unbounded} dictionary. van Emde Boas trees are extremely fast, however the domain is bounded and each element requires an associated integer key. In the end I decided that van Emde Boas trees are too restrictive, and also more suited for a dictionary interface defined using keys and values (like \code{java.util.Map.put(K key, V value)}) and thus a more general purpose and unbounded but less efficient O(log n) solution would be more appropriate for this situation.
 
 Finally, I chose a red-black tree over an AVL tree after considering the usage of the dictionary described in the project: keeping track of users logged in to a web-service. I assume that in most cases, more users log on and off than search for each other, so \textit{insertions and deletions} are more common than \textit{lookups}. Since red-black trees have generally faster inserts and deletions \parencite{clrs} - whereas AVL trees are faster at searches - this would be the most appropriate choice.
 
-The majority of my implementation is adapted from the pseudocode in the book 'Introduction to Algorithms: Third Edition' by T.H. Cormen, C.E. Stein, R.L. Rivest, and C. Stein.
+\subsection{Implementation}
+
+The majority of my implementation is adapted from the pseudocode in the book 'Introduction to Algorithms: Third Edition' by T.H. Cormen, C.E. Stein, R.L. Rivest, and C. Stein. However, due to the specified requirements of the dictionary, my adaptation of the red-black tree has ended up with various modifications that differ significantly from the CLRS description. In this section, I detail the implementation of the major methods in the \code{RedBlackTree} class.
+
+\subsubsection{Searching}
+I considered various options for the \code{contains()} method. My final implementation runs in logarithmic time by using the typical binary search tree search (traversing down the tree). However, I also considered the option of having a separate internal data structure such as a hash table. A hash table would provide \textit{much} faster lookups on average, but unfortunately still has a O(n) worst case. The project specifications require O(log n) worst case, and storing the data in a hash table as well would also essentially double the space requirement. In the end, I decided a basic search would suffice for this method.
+ 
+\subsubsection{Successors/Predecessors}
+This part of the dictionary took several refactorings and was the most challenging part of the project to implement. At first I developed the methods to first locate the node with the given value, and then find the successor of that node using well-known binary search tree methods. Therefore initially, \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} would take logarithmic time, as they would first check whether the element was contained in the dictionary (O(log n)) and then check whether it was within the bounds of the dictionary (not $\leq$ min or $\geq$ max respectively). However after implementation I realised that it was not required that the argument be contained in the dictionary. Therefore \code{hasPredecessor(Object)} and \code{hasSuccessor(Object)} could be reduced to constant time - since the argument only has to be less than the maximum element to have a successor, and vice versa for predecessor. My first attempt at finding the successor of a given element would find the "floor" of the element (the largest element that is less than or equal to the argument) and then find the successor of that node. Therefore it would essentially run two logarithmic methods in series, making it a O(log n) method overall. This would have sufficed to meet time complexity requirements, however I felt it still did double the work that it needed to, because it would search for a node, starting at the root, and then start at the root again and find the successor of that node. My final design takes a more concise approach, which evolved from merging the two original methods \code{successor(Node)} and \code{floor(Node)}. The method, called \code{above(Node)} finds the least node \textit{strictly greater} than the argument. It moves down the tree starting at the root. Each iteration, if the current node is greater than the argument, and it doesn't have a left child, then we are at the minimum element so we return that. Otherwise if the current node is less or equal to the argument: if the node has a right child, we continue down that path. If not, then we run the classic binary search tree successor from there: 
+
+\subsubsection{Insertion} 
+
+\subsubsection{Deletion}

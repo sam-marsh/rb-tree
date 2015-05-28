@@ -19,16 +19,19 @@ public class DataGenerator {
         BufferedWriter bw = new BufferedWriter(new FileWriter(f));
         RedBlackTree<Integer> dictionary;
         List<Integer> collection = new ArrayList<Integer>();
-        double cmp = 0;
-        for (int i = 0; i < SIZE; ++i)
+        for (int i = 0; i < SIZE; ++i) {
             collection.add(i);
-        for (int trial = 0; trial < NUM_TRIALS; ++trial) {
-            Collections.shuffle(collection);
+        }
+        double cmp = 0;
+        for (int i = 0; i < NUM_TRIALS; ++i) {
             dictionary = new RedBlackTree<Integer>();
-            for (int i = 0; i < SIZE; ++i) {
-                dictionary.add(collection.get(i));
+            Collections.shuffle(collection);
+            for (int j = 0; j < SIZE; ++j) {
+                dictionary.add(collection.get(j));
             }
-            dictionary.contains((int) (Math.random() * SIZE));
+            int rand = (int) (Math.random() * SIZE);
+            dictionary.delete(rand);
+            dictionary.add(rand);
             cmp += dictionary.comparisons;
         }
         System.out.println(cmp / NUM_TRIALS);

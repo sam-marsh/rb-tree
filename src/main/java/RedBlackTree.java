@@ -1,10 +1,14 @@
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * A dictionary implementation using a type of balanced binary search tree
  * called a red-black tree.
- * The dictionary is sorted using the natural ordering of the elements.
+ * The dictionary is sorted using the natural ordering of the elements. No
+ * duplicate values are allowed - if two elements are considered the same by
+ * their natural ordering ({@link Comparable#compareTo(Object)} returns 0)
+ * then they are considered equal by the dictionary.
  * The implementation provides guaranteed logarithmic time for adding,
  * deleting and searching.
  * This implementation is primarily adapted from the book 'Introduction to
@@ -61,6 +65,17 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public int comparisons;
 
     /**
+     * An integer to keep track of the total number of modifications on
+     * the dictionary - this is used to ensure a fail-fast iterator. Note:
+     * this does not include modifications made by an iterator, only through
+     * the {@link Dictionary#add(Comparable)} and
+     * {@link Dictionary#delete(Comparable)} methods. So it is not an
+     * way of determining the correct total number of modifications to the
+     * dictionary, it is only for ensuring a fail-fast iterator.
+     */
+    private int operations;
+
+    /**
      * Creates a new red-black tree, representing a dictionary, with no
      * elements.
      */
@@ -69,6 +84,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         log = new StringBuilder();
         root = min = max = nil;
         comparisons = 0;
+        operations = 0;
     }
 
     /**
@@ -120,7 +136,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     @Override
     public boolean contains(E item) {
         reset();
-        boolean ret = locate(new Node(item)) != null;
+        boolean ret = locate(new Node(item)) != nil;
         log(String.format("contains(%s)", item));
         return ret;
     }
@@ -176,27 +192,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             throw new NoSuchElementException("Argument does not have a " +
                     "predecessor");
         reset();
-        Node pre = predecessor(locateMaxNodeLessThan(new Node(item)));
+        Node pre = below(new Node(item));
         log(String.format("predecessor(%s)", item));
         return pre.key;
-    }
-
-    /**
-     * Finds the predecessor of a node.
-     *
-     * @param node the node to find the predecessor for
-     * @return null if the node doesn't have a predecessor, otherwise the
-     * greatest node less than the argument
-     */
-    private Node predecessor(Node node) {
-        if (node == null || node == min) return null;
-        if (node.left != nil) return maximum(node.left);
-        Node parent = node.parent;
-        while (parent != nil && node == parent.left) {
-            node = parent;
-            parent = parent.parent;
-        }
-        return parent;
     }
 
     /**
@@ -210,27 +208,55 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E successor(E item) throws NoSuchElementException {
-        if (!hasPredecessor(item))
+        if (!hasSuccessor(item))
             throw new NoSuchElementException("Argument does not have a " +
                     "successor");
         reset();
-        Node suc = successor(locateMinNodeGreaterThan(new Node(item)));
+        Node suc = above(new Node(item));
         log(String.format("successor(%s)", item));
         return suc.key;
     }
 
     /**
-     * Finds the successor of a node.
+     * Finds the successor of a node. Used in the
+     * {@link TreeIterator#next()} method when iterating over the dictionary.
      *
      * @param node the node to find the successor for
-     * @return null if the node doesn't have a successor, otherwise the
+     * @return nil if the node doesn't have a successor, otherwise the
      * least node greater than the argument
      */
     private Node successor(Node node) {
-        if (node == null || node == max) return null;
+        //fairly basic strategy - if the node has a right child, the
+        //successor is the minimum node of that subtree, otherwise move up
+        //the tree until we find a node such that the node is a left child -
+        //then the successor will be the parent of that node
+        if (node == nil || node == max) return nil;
         if (node.right != nil) return minimum(node.right);
         Node parent = node.parent;
         while (parent != nil && node == parent.right) {
+            node = parent;
+            parent = parent.parent;
+        }
+        return parent;
+    }
+
+    /**
+     * Finds the successor of a node. Used in the
+     * {@link TreeIterator#next()} method when iterating over the dictionary.
+     *
+     * @param node the node to find the successor for
+     * @return nil if the node doesn't have a successor, otherwise the
+     * least node greater than the argument
+     */
+    private Node predecessor(Node node) {
+        //fairly basic strategy - if the node has a left child, the
+        //predecessor is the minimum node of that subtree, otherwise move up
+        //the tree until we find a node such that the node is a right child -
+        //then the predecessor will be the parent of that node
+        if (node == nil || node == max) return nil;
+        if (node.left != nil) return maximum(node.left);
+        Node parent = node.parent;
+        while (parent != nil && node == parent.left) {
             node = parent;
             parent = parent.parent;
         }
@@ -280,6 +306,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         reset();
         Node node = new Node(item);
         boolean tmp = insert(node);
+        if (tmp) ++operations; //we successfully added an item
         log(String.format("add(%s)", item));
         return tmp;
     }
@@ -293,6 +320,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      * dictionary didn't already contain the node.
      */
     private boolean insert(Node toInsert) {
+        if (toInsert.key == null) return false;
         Node curr = root;
         //if the tree is empty, we simply set up the root node and then
         //return early, since we don't need to do any further
@@ -348,8 +376,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public boolean delete(E item) {
         reset();
         Node z = locate(new Node(item));
-        if (z == null) return false;
+        if (z == nil) return false;
         delete(z);
+        ++operations; //we successfully deleted an item
         log(String.format("delete(%s)", item));
         return true;
     }
@@ -457,7 +486,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     public Iterator<E> iterator(E start) {
         reset();
         Iterator<E> ret = new TreeIterator(
-                locateMinNodeGreaterThan(new Node(start)));
+                ceiling(new Node(start)));
         log(String.format("iterator(%s)", start));
         return ret;
     }
@@ -503,16 +532,16 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      *
      * @param toFind the node reference to find in the tree
      * @return the valid node, with parent/left child/right child etc. values
-     * filled in, that has the equal element to the argument (or null if no
+     * filled in, that has the equal element to the argument (or nil if no
      * such node is found)
      */
     private Node locate(Node toFind) {
         //if the tree is empty, no node exists
-        if (isEmpty(true)) return null;
+        if (isEmpty(true)) return nil;
         Node curr = root;
         //move down the tree until we find an element with the same value (as
         //defined by their comparative values)
-        while (curr != null) {
+        while (curr != nil) {
             int cmp = compare(toFind, curr);
             if (cmp < 0) {
                 if (curr.left != nil) {
@@ -527,77 +556,111 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
             } else if (cmp == 0) {
                 return curr;
             }
-            curr = null;
+            curr = nil;
         }
-        //didn't find anything, return null
-        return null;
+        //didn't find anything, return the nil sentinel
+        return nil;
     }
 
     /**
-     * Finds the least node greater than a given node.
-     * Used in the {@link #successor(Comparable)} method and also the
-     * {@link #iterator(Comparable)} method.
+     * Finds the least node strictly greater than a given node. Used in the
+     * {@link #successor(Comparable)} method.
      *
-     * @param toFind the node to find the successor for.
-     * @return the successor of the given node.
+     * @param node the node to find the 'successor' for
+     * @return the least node greater than the argument, or nil if there
+     * isn't one.
      */
-    private Node locateMinNodeGreaterThan(Node toFind) {
+    private Node above(Node node) {
         Node curr = root;
-        Node smallest = max;
-        while (curr != null) {
-            int cmp = compare(toFind, curr);
+        while (curr != nil) {
+            int cmp = compare(node, curr);
             if (cmp < 0) {
-                //additional comparison - if we find a smaller valid element,
-                //update the reference
-                if (compare(curr, smallest) < 0) smallest = curr;
                 if (curr.left != nil) {
                     curr = curr.left;
-                    continue;
+                } else {
+                    return curr;
                 }
-            } else if (cmp > 0) {
+            } else {
+                //the argument is greater than or equal to the current node, so
+                //we either continue moving to the right down the tree or, if
+                //no right child exists, the node below will just be the
+                //successor of the current node
                 if (curr.right != nil) {
                     curr = curr.right;
-                    continue;
+                } else {
+                    return successor(curr);
                 }
-            } else if (cmp == 0) {
-                return curr;
             }
-            curr = null;
         }
-        return smallest;
+        return nil;
     }
 
     /**
-     * Finds the greatest node less than a given node.
-     * Used in the {@link #predecessor(Comparable)} method.
+     * Finds the greatest node strictly less than a given node. Used in the
+     * {@link #predecessor(Comparable)} method.
      *
-     * @param toFind the node to find the predecessor for.
-     * @return the predecessor of the given node.
+     * @param node the node to find the 'predecessor' for
+     * @return the greatest node less than the argument, or nil if there
+     * isn't one.
      */
-    private Node locateMaxNodeLessThan(Node toFind) {
+    private Node below(Node node) {
         Node curr = root;
-        Node largest = max;
-        while (curr != null) {
+        while (curr != nil) {
+            int cmp = compare(node, curr);
+            if (cmp > 0) {
+                if (curr.right != nil) {
+                    curr = curr.right;
+                } else {
+                    return curr;
+                }
+            } else {
+                //the argument is less than or equal to the current node, so
+                //we either continue moving to the left down the tree or, if
+                //no left child exists, the node below will just be the
+                //predecessor of the current node
+                if (curr.left != nil) {
+                    curr = curr.left;
+                } else {
+                    return predecessor(curr);
+                }
+            }
+        }
+        return nil;
+    }
+
+    /**
+     * Finds the least node greater than or equal to the given node. That is,
+     * if the argument's key is in the dictionary it will return that node,
+     * otherwise it will return the smallest node with key greater than the
+     * argument's key.
+     *
+     * @param toFind the key to find the ceiling for
+     * @return the least key greater than or equal to the argument, or the
+     * nil sentinel if no such key exists.
+     */
+    private Node ceiling(Node toFind) {
+        Node curr = root;
+        while (curr != nil) {
             int cmp = compare(toFind, curr);
             if (cmp < 0) {
                 if (curr.left != nil) {
                     curr = curr.left;
-                    continue;
+                } else {
+                    return curr;
                 }
             } else if (cmp > 0) {
-                //additional comparison - if we find a larger valid element,
-                //update the reference
-                if (compare(curr, largest) > 0) largest = curr;
                 if (curr.right != nil) {
                     curr = curr.right;
-                    continue;
+                } else {
+                    return successor(curr);
                 }
-            } else if (cmp == 0) {
+            } else {
+                //we found the element in the dictionary, so just return the
+                //reference to the valid node
                 return curr;
             }
-            curr = null;
         }
-        return largest;
+        return nil;
     }
 
     /**
@@ -946,7 +1009,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
-     * An in-order iterator over the elements of the dictionary.
+     * An in-order iterator over the elements of the dictionary, starting at
+     * a given node. If any modifications are made to the dictionary after
+     * the construction of the dictionary, the iterator is invalidated and
+     * any method calls to any of the iterator's methods will cause a
+     * {@link ConcurrentModificationException}.
      */
     private class TreeIterator implements Iterator<E> {
 
@@ -962,22 +1029,37 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         private Node next;
 
         /**
+         * The <it>original</it> number of modifications made on the
+         * dictionary when this iterator was created - if this is different
+         * from the current number of modifications on the dictionary, then
+         * we know that it has been modified.
+         */
+        private int ops;
+
+        /**
          * Creates a new iterator starting at the given element.
          * @param start the 'start' element. Will be returned by the
          *              iterator first.
          */
         private TreeIterator(Node start) {
-            last = null;
+            last = nil;
             next = start;
+            ops = operations;
         }
 
         /**
          * Checks if the iterator has any more elements.
          * @return true if and only if the iterator has more elements.
+         * @throws ConcurrentModificationException if any modifications have
+         * been made to the backing dictionary since this iterator's
+         * construction
          */
         @Override
-        public boolean hasNext() {
-            return next != null;
+        public boolean hasNext() throws ConcurrentModificationException {
+            if (ops != operations)
+                throw new ConcurrentModificationException("backing dictionary" +
+                        " has been modified");
+            return next != nil;
         }
 
         /**
@@ -989,11 +1071,18 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
          * @return the next element in the dictionary
          * @throws NoSuchElementException if all elements have already been
          * returned, that is, if the iterator is 'used up'.
+         * @throws ConcurrentModificationException if any modifications have
+         * been made to the backing dictionary since this iterator's
+         * construction
          */
         @Override
-        public E next() throws NoSuchElementException {
+        public E next() throws NoSuchElementException,
+                ConcurrentModificationException {
             if (!hasNext())
                 throw new NoSuchElementException("No further elements");
+            if (ops != operations)
+                throw new ConcurrentModificationException("backing dictionary" +
+                        " has been modified");
             last = next;
             next = successor(next);
             return last.key;
@@ -1008,15 +1097,21 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
          * @throws IllegalStateException if the {@link #next()} method has not
          * yet been called, or the remove method has already been called
          * after the last call to the {@link #next()} method
+         * @throws ConcurrentModificationException if any modifications have
+         * been made to the backing dictionary since this iterator's
+         * construction
          */
         @Override
         public void remove() throws IllegalStateException {
-            if (last == null)
+            if (ops != operations)
+                throw new ConcurrentModificationException("backing dictionary" +
+                        " has been modified");
+            if (last == nil)
                 throw new IllegalStateException("");
             delete(last);
-            //set last to null so that if this method is called again without
+            //set last to nil so that if this method is called again without
             //calling next first, an exception will be thrown
-            last = null;
+            last = nil;
         }
 
     }

@@ -3,6 +3,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -105,14 +106,28 @@ public class DictionaryTest {
     }
 
     @Test
-    public void correctPredecessor() {
+    public void correctPredecessorWhenInDictionary() {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
         assertThat(dictionary.predecessor(50), is(49));
     }
 
     @Test
-    public void correctSuccessor() {
+    public void correctPredecessorWhenNotInDictionary() {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
+        dictionary.delete(50);
+        assertThat(dictionary.predecessor(50), is(49));
+    }
+
+    @Test
+    public void correctSuccessorWhenInDictionary() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        assertThat(dictionary.successor(50), is(51));
+    }
+
+    @Test
+    public void correctSuccessorWhenNotInDictionary() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        dictionary.delete(50);
         assertThat(dictionary.successor(50), is(51));
     }
 
@@ -136,17 +151,33 @@ public class DictionaryTest {
     }
 
     @Test
-    public void iteratorStartsFromCorrectElement() {
+    public void iteratorStartsFromCorrectSpotWhenInputNotInDictionary() {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
         dictionary.delete(50);
         Iterator<Integer> iterator = dictionary.iterator(50);
         assertThat(iterator.next(), is(51));
     }
 
+    @Test(expected = ConcurrentModificationException.class)
+    public void iteratorFailsWhenNewItemAdded() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator();
+        dictionary.add(101);
+        iterator.hasNext();
+    }
+
+    @Test(expected = ConcurrentModificationException.class)
+    public void iteratorFailsWhenItemDeleted() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator();
+        dictionary.delete(50);
+        iterator.hasNext();
+    }
+
     @After
     public void printLog() throws IOException {
-        System.out.println(dictionary.getLogString());
-        System.out.print(dictionary);
+        //System.out.println(dictionary.getLogString());
+        //System.out.print(dictionary);
     }
 
 }
