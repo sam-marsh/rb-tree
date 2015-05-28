@@ -98,11 +98,23 @@ public class DictionaryTest {
     }
 
     @Test
+    public void hasPredecessorReturnsTrueForItemLargerThanMax() {
+        dictionary.add(0);
+        assertThat(dictionary.hasPredecessor(500), is(true));
+    }
+
+    @Test
     public void hasSuccessorReturnsFalseForMaxItem() {
         dictionary.add(0);
         assertThat(dictionary.hasSuccessor(0), is(false));
         dictionary.add(1);
         assertThat(dictionary.hasSuccessor(0), is(true));
+    }
+
+    @Test
+    public void hasSuccessorReturnsTrueForItemSmallerThanMin() {
+        dictionary.add(0);
+        assertThat(dictionary.hasPredecessor(500), is(true));
     }
 
     @Test
@@ -119,6 +131,12 @@ public class DictionaryTest {
     }
 
     @Test
+    public void correctPredecessorWhenLargerThanMax() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        assertThat(dictionary.predecessor(500), is(99));
+    }
+
+    @Test
     public void correctSuccessorWhenInDictionary() {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
         assertThat(dictionary.successor(50), is(51));
@@ -129,6 +147,12 @@ public class DictionaryTest {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
         dictionary.delete(50);
         assertThat(dictionary.successor(50), is(51));
+    }
+
+    @Test
+    public void correctSuccessorWhenSmallerThanMin() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        assertThat(dictionary.successor(-500), is(0));
     }
 
     @Test
@@ -158,6 +182,53 @@ public class DictionaryTest {
         assertThat(iterator.next(), is(51));
     }
 
+    @Test
+    public void emptyIteratorWhenStartIsGreaterThanMax() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator(101);
+        assertThat(iterator.hasNext(), is(false));
+    }
+
+    @Test
+    public void iteratorCanDeleteSomeItems() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator();
+        while (iterator.hasNext()) {
+            Integer i = iterator.next();
+            if (i % 2 == 0)
+                iterator.remove();
+        }
+        for (int i = 0 ; i < 100; ++i)
+            assertThat(dictionary.contains(i), is(i % 2 == 1));
+    }
+
+    @Test
+    public void iteratorCanDeleteAllItems() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+        assertThat(dictionary.isEmpty(), is(true));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void iteratorFailsWhenRemoveCalledBeforeNext() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator(50);
+        iterator.remove();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void iteratorFailsWhenRemoveCalledTwice() {
+        for (int i = 0; i < 100; ++i) dictionary.add(i);
+        Iterator<Integer> iterator = dictionary.iterator(50);
+        iterator.next();
+        iterator.remove();
+        iterator.remove();
+    }
+
     @Test(expected = ConcurrentModificationException.class)
     public void iteratorFailsWhenNewItemAdded() {
         for (int i = 0; i < 100; ++i) dictionary.add(i);
@@ -177,7 +248,7 @@ public class DictionaryTest {
     @After
     public void printLog() throws IOException {
         System.out.println(dictionary.getLogString());
-        System.out.print(dictionary);
+        //System.out.print(dictionary);
     }
 
 }
