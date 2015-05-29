@@ -163,10 +163,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E predecessor(E item) throws NoSuchElementException {
-        if (!hasPredecessor(item))
+        if (!hasPredecessor(item)) {
             throw new NoSuchElementException(
                     "argument does not have a predecessor"
             );
+        }
         reset();
         Node pre = below(new Node(item));
         log(String.format("predecessor(%s)", item));
@@ -184,10 +185,11 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
      */
     @Override
     public E successor(E item) throws NoSuchElementException {
-        if (!hasSuccessor(item))
+        if (!hasSuccessor(item)) {
             throw new NoSuchElementException(
                     "argument does not have a successor"
             );
+        }
         reset();
         Node suc = above(new Node(item));
         log(String.format("successor(%s)", item));
@@ -305,8 +307,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
         if (start == null) {
             throw new IllegalArgumentException("argument is null");
         }
-        Iterator<E> ret = new TreeIterator(
-                ceiling(new Node(start)));
+        Iterator<E> ret = new TreeIterator(ceiling(new Node(start)));
         log(String.format("iterator(%s)", start));
         return ret;
     }
@@ -333,7 +334,9 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
     }
 
     /**
-     * Provides a string representation of the dictionary, in tree form.
+     * Provides a vertical string representation of the dictionary, in tree
+     * form.
+     * Note that the left child of a node is positioned above the right child.
      *
      * @return a string with the structure of the dictionary along with the
      * associated values in the dictionary.
@@ -981,7 +984,7 @@ public class RedBlackTree<E extends Comparable<E>> implements Dictionary<E> {
          *
          * @param key the element (key/value) for this node to hold.
          */
-        Node(E key) {
+        private Node(E key) {
             this.key = key;
             left = nil;
             right = nil;
