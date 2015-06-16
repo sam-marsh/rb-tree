@@ -1,8 +1,10 @@
 # Dictionary
 
 CITS2200: Data Structures and Algorithms
-Project - Samuel Marsh
-Dictionary Implementation
+
+## Project - Samuel Marsh
+
+### Dictionary Implementation
 
 An implementation of a general dictionary that allows efficient insertions, 
 deletions and access to a collection of objects. Here, efficient refers to 
