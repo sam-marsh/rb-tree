@@ -2,6 +2,8 @@
 
 #### Dictionary Implementation - Samuel Marsh
 
+[Report - PDF](/report/report.pdf)
+
 An implementation of a general dictionary that allows efficient insertions, 
 deletions and access to a collection of objects. Here, efficient refers to 
 O(lg n) time or better.
