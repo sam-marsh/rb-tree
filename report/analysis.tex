@@ -90,6 +90,8 @@ This method, although similar in functionality to \code{iterator()} does \textit
 
 In addition to the time complexity analysis of returning a new iterator, I will also briefly detail the time complexity of the methods in the \code{TreeIterator} class: clearly \code{hasNext()} takes O(1) since it simply performs a `nil-check'; \code{remove()} takes O(log n) since it calls \code{delete(Node)}, which is shown to be O(log n) above; \code{next()} also takes O(log n) since it calls the \code{successor(Node)} method, and as above \code{successor(Node)} runs in O(log n). Therefore iterating through the dictionary takes time O(n log n).
 
+I expect there is a more efficient way to do iteration - e.g. using a stack and pushing the left subtree onto the stack/pushing right child and its left subtree onto the stack with each call to \code{next()}. Although I had this strategy working for iteration over the full tree, I could not find a way to successfully iterate in this fashion when given some start node that is not the minimum.
+
 \subsubsection{\code{getLogString()}}
 \code{getLogString()} retrieves the string value of the \code{StringBuilder} log field and then resets the log. This is independent of the number of elements in the dictionary, therefore running in O(1) time.
 
